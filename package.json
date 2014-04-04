@@ -26,16 +26,16 @@
     "test": "./node_modules/mocha/bin/mocha"
   },
   "dependencies": {
-    "espower": "^0.4.1",
-    "esprima": "^1.1.1",
-    "escodegen": "^1.3.1",
-    "convert-source-map": "^0.3.3",
-    "lodash.merge": "^2.4.1"
+    "espower": "~0.4.1",
+    "esprima": "~1.1.1",
+    "escodegen": "~1.3.1",
+    "convert-source-map": "~0.3.3",
+    "lodash.merge": "~2.4.1"
   },
   "devDependencies": {
-    "expect.js": "^0.3.1",
-    "jshint": "^2.4.4",
-    "mocha": "^1.18.2"
+    "expect.js": "~0.3.1",
+    "jshint": "~2.4.4",
+    "mocha": "~1.18.2"
   },
   "engines": {
     "node": ">=0.8.0",

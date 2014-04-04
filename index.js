@@ -1,4 +1,4 @@
-/*
+/**
  * espower-source - Power Assert instrumentor from source to source.
  * 
  * https://github.com/twada/espower-source
@@ -16,20 +16,21 @@ var espower = require('espower'),
 function espowerSourceToSource(jsCode, filepath, options) {
     'use strict';
 
-    var espowerOptions, modifiedAst, generatedOutput, code, map,
-        jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, source: filepath});
+    var jsAst, espowerOptions, modifiedAst, escodegenOutput, code, map;
+
+    jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, source: filepath});
     espowerOptions = merge(merge(espower.defaultOptions(), options), {
         destructive: true,
         path: filepath,
         source: jsCode
     });
     modifiedAst = espower(jsAst, espowerOptions);
-    generatedOutput = escodegen.generate(modifiedAst, {
+    escodegenOutput = escodegen.generate(modifiedAst, {
         sourceMap: true,
         sourceMapWithCode: true
     });
-    code = generatedOutput.code; // Generated source code
-    map = sourceMap.fromJSON(generatedOutput.map);
+    code = escodegenOutput.code; // Generated source code
+    map = sourceMap.fromJSON(escodegenOutput.map);
     map.sourcemap.sourcesContent = [jsCode];
     return code + '\n' + map.toComment() + '\n';
 }
