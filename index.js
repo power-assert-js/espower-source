@@ -18,7 +18,7 @@ function espowerSourceToSource(jsCode, filepath, options) {
 
     var jsAst, espowerOptions, modifiedAst, escodegenOutput, code, map;
 
-    jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, source: filepath});
+    jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, raw: true, source: filepath});
     espowerOptions = merge(merge(espower.defaultOptions(), options), {
         destructive: true,
         path: filepath,
