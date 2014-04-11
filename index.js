@@ -31,7 +31,7 @@ function espowerSourceToSource(jsCode, filepath, options) {
     });
     code = escodegenOutput.code; // Generated source code
     map = sourceMap.fromJSON(escodegenOutput.map);
-    map.sourcemap.sourcesContent = [jsCode];
+    map.setProperty('sources', [filepath]);
     return code + '\n' + map.toComment() + '\n';
 }
 
