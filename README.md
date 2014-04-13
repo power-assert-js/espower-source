@@ -5,7 +5,7 @@ espower-source
 [![NPM version](https://badge.fury.io/js/espower-source.svg)](http://badge.fury.io/js/espower-source)
 [![Dependency Status](https://gemnasium.com/twada/espower-source.svg)](https://gemnasium.com/twada/espower-source)
 
-Power Assert instrumentor from source to source.
+Power Assert instrumentor from source to source, with source-map.
 
 
 DESCRIPTION
