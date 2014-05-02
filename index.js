@@ -21,8 +21,7 @@ function espowerSourceToSource(jsCode, filepath, options) {
     jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, raw: true, source: filepath});
     espowerOptions = merge(merge(espower.defaultOptions(), options), {
         destructive: true,
-        path: filepath,
-        source: jsCode
+        path: filepath
     });
     modifiedAst = espower(jsAst, espowerOptions);
     escodegenOutput = escodegen.generate(modifiedAst, {
