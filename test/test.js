@@ -1,6 +1,6 @@
 var sourceToSource = require('..'),
     fs = require('fs'),
-    expect = require('expect.js');
+    assert = require('assert');
 
 describe('with default options', function() {
     beforeEach(function () {
@@ -10,12 +10,12 @@ describe('with default options', function() {
     });
     
     it('should return a string', function() {
-        expect(this.output).to.be.a('string');
+        assert.equal(typeof this.output, 'string');
     });
     
     it('should transform source', function() {
         var expected = fs.readFileSync('test/expected/example.js', 'utf8');
-        expect(this.output).to.be(expected);
+        assert.equal(this.output, expected);
     });
 });
 
@@ -37,11 +37,11 @@ describe('with customized options', function() {
     });
     
     it('should return a string', function() {
-        expect(this.output).to.be.a('string');
+        assert.equal(typeof this.output, 'string');
     });
     
     it('should transform source', function() {
         var expected = fs.readFileSync('test/expected/customized.js', 'utf8');
-        expect(this.output).to.be(expected);
+        assert.equal(this.output, expected);
     });
 });
