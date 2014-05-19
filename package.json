@@ -1,6 +1,6 @@
 {
   "name": "espower-source",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Power Assert instrumentor from source to source, with source-map",
   "keywords": [
     "power-assert",
