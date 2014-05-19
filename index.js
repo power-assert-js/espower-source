@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2014 Takuto Wada
  * Licensed under the MIT license.
- *   https://raw.github.com/twada/espower-source/master/MIT-LICENSE.txt
+ *   https://github.com/twada/espower-source/blob/master/MIT-LICENSE.txt
  */
 var espower = require('espower'),
     esprima = require('esprima'),

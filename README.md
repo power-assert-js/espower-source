@@ -31,4 +31,4 @@ CONTRIBUTORS
 
 LICENSE
 ---------------------------------------
-Licensed under the [MIT](https://raw.github.com/twada/espower-source/master/MIT-LICENSE.txt) license.
+Licensed under the [MIT](https://github.com/twada/espower-source/blob/master/MIT-LICENSE.txt) license.
