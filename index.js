@@ -11,7 +11,7 @@ var espower = require('espower'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
     merge = require('lodash.merge'),
-    sourceMap = require('convert-source-map');
+    convert = require('convert-source-map');
 
 function espowerSourceToSource(jsCode, filepath, options) {
     'use strict';
@@ -29,8 +29,8 @@ function espowerSourceToSource(jsCode, filepath, options) {
         sourceMapWithCode: true
     });
     code = escodegenOutput.code; // Generated source code
-    map = sourceMap.fromJSON(escodegenOutput.map);
-    map.setProperty('sources', [filepath]);
+    map = convert.fromJSON(escodegenOutput.map.toString());
+    map.sourcemap.sourcesContent = [jsCode];
     return code + '\n' + map.toComment() + '\n';
 }
 

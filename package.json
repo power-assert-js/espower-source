@@ -40,7 +40,8 @@
   },
   "devDependencies": {
     "jshint": "~2.5.0",
-    "mocha": "~1.18.2"
+    "mocha": "~1.18.2",
+    "source-map": "~0.1.33"
   },
   "engines": {
     "node": ">=0.8.0",
