@@ -13,7 +13,7 @@ var espower = require('espower'),
     merge = require('lodash.merge'),
     convert = require('convert-source-map');
 
-function espowerSourceToSource(jsCode, filepath, options) {
+function espowerSource(jsCode, filepath, options) {
     'use strict';
 
     var jsAst, espowerOptions, modifiedAst, escodegenOutput, code, map;
@@ -34,4 +34,4 @@ function espowerSourceToSource(jsCode, filepath, options) {
     return code + '\n' + map.toComment() + '\n';
 }
 
-module.exports = espowerSourceToSource;
+module.exports = espowerSource;
