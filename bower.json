@@ -1,0 +1,13 @@
+{
+  "name": "espower-source",
+  "version": "0.7.1",
+  "main": "build/espower-source.js",
+  "ignore": [
+    "**/.*",
+    "package.json",
+    "test"
+  ],
+  "devDependencies": {
+    "mocha": "~1.20.0",
+  }
+}

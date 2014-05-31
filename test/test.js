@@ -1,4 +1,4 @@
-var sourceToSource = require('..'),
+var espowerSource = require('..'),
     sourceMap = require('source-map'),
     convert = require('convert-source-map'),
     fs = require('fs'),
@@ -8,7 +8,7 @@ describe('with default options', function() {
     beforeEach(function () {
         this.path = 'test/fixtures/example.js';
         this.input = fs.readFileSync(this.path, 'utf8'),
-        this.output = sourceToSource(this.input, this.path);
+        this.output = espowerSource(this.input, this.path);
         this.map = convert.fromSource(this.output).toObject();
         this.expected = fs.readFileSync('test/expected/example.js', 'utf8');
     });
@@ -65,7 +65,7 @@ describe('with customized options', function() {
     beforeEach(function () {
         this.path = 'test/fixtures/customized.js';
         this.input = fs.readFileSync(this.path, 'utf8'),
-        this.output = sourceToSource(this.input, this.path, {
+        this.output = espowerSource(this.input, this.path, {
             powerAssertVariableName: 'refute',
             targetMethods: {
                 oneArg: [
