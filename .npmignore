@@ -5,4 +5,5 @@
 node_modules/
 bower_components/
 npm-debug.log
+bump.sh
 tmp
