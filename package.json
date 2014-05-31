@@ -39,8 +39,8 @@
     "lodash.merge": "~2.4.1"
   },
   "devDependencies": {
-    "jshint": "~2.5.0",
-    "mocha": "~1.19.0",
+    "jshint": "~2.5.1",
+    "mocha": "~1.20.0",
     "source-map": "~0.1.33"
   },
   "engines": {
