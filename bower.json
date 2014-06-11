@@ -1,12 +1,33 @@
 {
   "name": "espower-source",
-  "version": "0.7.3",
+  "description": "Power Assert instrumentor from source to source, with source-map",
   "main": "build/espower-source.js",
+  "license": "MIT-LICENSE.txt",
   "ignore": [
     "**/.*",
+    "index.js",
     "package.json",
     "test"
   ],
+  "keywords": [
+    "power-assert",
+    "test",
+    "assert",
+    "testing",
+    "ast"
+  ],
+  "authors": [
+    {
+      "name": "Takuto Wada",
+      "email": "takuto.wada@gmail.com",
+      "homepage": "https://github.com/twada"
+    }
+  ],
+  "homepage": "https://github.com/twada/espower-source",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/twada/espower-source.git"
+  },
   "devDependencies": {
     "mocha": "~1.20.1"
   }
