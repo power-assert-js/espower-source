@@ -23,6 +23,14 @@
     }
   ],
   "main": "./index.js",
+  "files": [
+    "MIT-LICENSE.txt",
+    "README.md",
+    "index.js",
+    "package.json",
+    "build",
+    "test"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/twada/espower-source.git"
