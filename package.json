@@ -36,6 +36,7 @@
     "url": "git://github.com/twada/espower-source.git"
   },
   "scripts": {
+    "bower": "bower install --config.interactive=false",
     "build": "gulp bundle",
     "lint": "gulp lint",
     "test": "gulp test"

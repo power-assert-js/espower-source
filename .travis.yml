@@ -1,6 +1,11 @@
 language: node_js
 node_js:
   - "0.10"
+before_install:
+  - "npm install -g gulp"
+  - "npm install -g bower"
+before_script:
+  - "npm run bower"
 script:
-  - "npm run-script jshint"
+  - "npm run lint"
   - "npm test"
