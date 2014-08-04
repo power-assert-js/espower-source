@@ -4,3 +4,4 @@ bower_components/
 npm-debug.log
 tmp/
 bump.sh
+build/test.js

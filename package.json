@@ -28,7 +28,7 @@
     "README.md",
     "index.js",
     "package.json",
-    "build",
+    "build/espower-source.js",
     "test"
   ],
   "repository": {
@@ -48,8 +48,10 @@
     "lodash.merge": "~2.4.1"
   },
   "devDependencies": {
+    "brfs": "~1.2.0",
     "browserify": "~5.9.1",
     "del": "~0.1.1",
+    "glob": "~4.0.5",
     "gulp": "~3.8.7",
     "gulp-derequire": "~0.3.0",
     "gulp-jshint": "~1.8.4",

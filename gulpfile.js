@@ -6,6 +6,8 @@ var gulp = require('gulp'),
     mochaPhantomJS = require('gulp-mocha-phantomjs'),
     webserver = require('gulp-webserver'),
     del = require('del'),
+    path = require('path'),
+    glob = require("glob"),
     source = require('vinyl-source-stream'),
     browserify = require('browserify'),
     derequire = require('gulp-derequire'),
@@ -18,6 +20,11 @@ var gulp = require('gulp'),
             srcFile: './index.js',
             destDir: './build',
             destName: 'espower-source.js'
+        },
+        test_bundle: {
+            srcFile: './test/*test.js',
+            destDir: './build',
+            destName: 'test.js'
         },
         test: {
             base: './test/',
@@ -50,7 +57,11 @@ gulp.task('watch', function () {
 });
 
 gulp.task('clean_bundle', function (done) {
-    del([config.bundle.destDir], done);
+    del([path.join(config.bundle.destDir, config.bundle.destName)], done);
+});
+
+gulp.task('clean_test_bundle', function (done) {
+    del([path.join(config.test_bundle.destDir, config.test_bundle.destName)], done);
 });
 
 gulp.task('bundle', ['clean_bundle'], function() {
@@ -59,6 +70,14 @@ gulp.task('bundle', ['clean_bundle'], function() {
         .pipe(source(config.bundle.destName))
         .pipe(derequire())
         .pipe(gulp.dest(config.bundle.destDir));
+});
+
+gulp.task('test_bundle', ['clean_test_bundle'], function() {
+    var files = glob.sync(config.test_bundle.srcFile);
+    var bundleStream = browserify({entries: files}).transform('brfs').bundle();
+    return bundleStream
+        .pipe(source(config.test_bundle.destName))
+        .pipe(gulp.dest(config.test_bundle.destDir));
 });
 
 gulp.task('lint', function() {
@@ -71,12 +90,12 @@ gulp.task('unit', function () {
     return runMochaSimply();
 });
 
-gulp.task('test_browser', ['bundle'], function () {
+gulp.task('test_browser', ['bundle', 'test_bundle'], function () {
     return gulp
         .src(config.test.browser)
         .pipe(mochaPhantomJS({reporter: 'dot'}));
 });
 
-gulp.task('clean', ['clean_bundle']);
+gulp.task('clean', ['clean_bundle', 'clean_test_bundle']);
 
 gulp.task('test', ['unit','test_browser']);
