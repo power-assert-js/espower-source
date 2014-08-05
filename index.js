@@ -10,7 +10,7 @@
 var espower = require('espower'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
-    merge = require('lodash.merge'),
+    extend = require('xtend'),
     convert = require('convert-source-map');
 
 function espowerSource(jsCode, filepath, options) {
@@ -19,7 +19,7 @@ function espowerSource(jsCode, filepath, options) {
     var jsAst, espowerOptions, modifiedAst, escodegenOutput, code, map;
 
     jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, raw: true, source: filepath});
-    espowerOptions = merge(merge(espower.defaultOptions(), options), {
+    espowerOptions = extend(extend(espower.defaultOptions(), options), {
         destructive: true,
         path: filepath
     });
