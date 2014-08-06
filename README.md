@@ -28,8 +28,7 @@ API
 |:------------|
 | `string`    |
 
-`espowerSource` function manipulates `originalCode` then returns (transformed) JavaScript code as string. SourceMap information is appended in SourceMap Comment syntax at the end of returned code. `originalCode` will be unchanged.
-
+`espowerSource` function manipulates `originalCode` then returns (transformed) JavaScript code as string. SourceMap information is appended in SourceMap Comment syntax at the end of returned code.
 
 #### originalCode
 
