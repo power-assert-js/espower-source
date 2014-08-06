@@ -5,14 +5,14 @@ espower-source
 [![NPM version](https://badge.fury.io/js/espower-source.svg)](http://badge.fury.io/js/espower-source)
 [![Dependency Status](https://gemnasium.com/twada/espower-source.svg)](https://gemnasium.com/twada/espower-source)
 
-Power Assert instrumentor from source to source, with source-map.
+Power Assert instrumentor from code to code, with SourceMap.
 
 
 DESCRIPTION
 ---------------------------------------
 `espower-source` is a source code transformer that applies [espower](http://github.com/twada/espower) to target code.
 
-`espower` manipulates assertion expression (JavaScript Code) represented as [Mozilla JavaScript AST](https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API), to instrument power-assert feature into the code.
+`espower` manipulates assertion expression (JavaScript Code) represented as [Mozilla JavaScript AST](https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API), to instrument power-assert feature into the code. SourceMap information is appended in SourceMap Comment syntax at the end of returned code.
 
 Please note that `espower-source` is a beta version product. Pull-requests, issue reports and patches are always welcomed.
 
@@ -22,7 +22,7 @@ See [power-assert](http://github.com/twada/power-assert) project for more docume
 API
 ---------------------------------------
 
-### var modifiedCodeWithSourceMap = espowerSource(originalCode, filepath, [options])
+### var modifiedCode = espowerSource(originalCode, filepath, [options])
 
 | return type |
 |:------------|
