@@ -10,13 +10,50 @@ Power Assert instrumentor from source to source, with source-map.
 
 DESCRIPTION
 ---------------------------------------
-`espower-source` is a source code transformer that applies [espower](http://github.com/twada/espower) to target source.
+`espower-source` is a source code transformer that applies [espower](http://github.com/twada/espower) to target code.
 
 `espower` manipulates assertion expression (JavaScript Code) represented as [Mozilla JavaScript AST](https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API), to instrument power-assert feature into the code.
 
 Please note that `espower-source` is a beta version product. Pull-requests, issue reports and patches are always welcomed.
 
 See [power-assert](http://github.com/twada/power-assert) project for more documentation.
+
+
+API
+---------------------------------------
+
+### var modifiedCodeWithSourceMap = espowerSource(originalCode, filepath, [options])
+
+| return type |
+|:------------|
+| `string`    |
+
+`espowerSource` function manipulates `originalCode` then returns (transformed) JavaScript code as string. SourceMap information is appended in SourceMap Comment syntax at the end of returned code. `originalCode` will be unchanged.
+
+
+#### originalCode
+
+| type     | default value |
+|:---------|:--------------|
+| `string` | N/A           |
+
+Original JavaScript source code that is a source of code transformation.
+
+#### filepath
+
+| type     | default value |
+|:---------|:--------------|
+| `string` | N/A           |
+
+Filepath of `originalCode`. If passed, espowerSource stores filepath information for later reporting.
+
+#### options
+
+| type     | default value |
+|:---------|:--------------|
+| `object` | (return value of `espower.defaultOptions()`) |
+
+Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/twada/espower#var-options--espowerdefaultoptions)) will be used.
 
 
 AUTHOR
