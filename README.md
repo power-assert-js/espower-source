@@ -50,9 +50,9 @@ Filepath of `originalCode`. If passed, espowerSource stores filepath information
 
 | type     | default value |
 |:---------|:--------------|
-| `object` | (return value of `espower.defaultOptions()`) |
+| `object` | (return value of `espower.defaultOptions()` but with `destructive` option is `true`) |
 
-Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/twada/espower#var-options--espowerdefaultoptions)) will be used.
+Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/twada/espower#var-options--espowerdefaultoptions)) will be used, but `destructive` option is set to `true` by espower-source module.
 
 
 AUTHOR
