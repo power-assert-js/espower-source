@@ -19,7 +19,7 @@ function espowerSource(jsCode, filepath, options) {
     var jsAst, espowerOptions, modifiedAst, escodegenOutput, code, map;
 
     jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, raw: true, source: filepath});
-    espowerOptions = extend(extend(espower.defaultOptions(), options), {
+    espowerOptions = extend(espower.defaultOptions(), options, {
         destructive: true,
         path: filepath
     });
