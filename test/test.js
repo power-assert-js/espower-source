@@ -66,15 +66,11 @@ describe('with customized options', function() {
         this.path = 'test/fixtures/customized.js';
         this.input = fs.readFileSync('test/fixtures/customized.js', 'utf8'),
         this.output = espowerSource(this.input, this.path, {
-            powerAssertVariableName: 'refute',
-            targetMethods: {
-                oneArg: [
-                    'isNull'
-                ],
-                twoArgs: [
-                    'same'
-                ]
-            }
+            patterns: [
+                'refute(actual, [message])',
+                'refute.same(actual, expected, [message])',
+                'refute.isNull(object, [message])'
+            ]
         });
         this.map = convert.fromSource(this.output).toObject();
         this.expected = fs.readFileSync('test/expected/customized.js', 'utf8');
