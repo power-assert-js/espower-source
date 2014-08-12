@@ -15,7 +15,7 @@
 If you already customize instrumentation pattern using `powerAssertVariableName` and `targetMethods`, you need to migarte. To migrate, change your code from the following:
 
 ```javascript
-var espowerSource = require('espower-source'),
+var espowerSource = require('espower-source');
 var options = {
     powerAssertVariableName: 'yourAssert',
     targetMethods: {
@@ -28,13 +28,13 @@ var options = {
         ]
     }
 };
-var modifiedCode = espowerSource(originalCode, filepath, options));
+var modifiedCode = espowerSource(originalCode, filepath, options);
 ```
 
 To:
 
 ```javascript
-var espowerSource = require('espower-source'),
+var espowerSource = require('espower-source');
 var options = {
     patterns: [
         'yourAssert(value, [message])',
@@ -43,5 +43,5 @@ var options = {
         'yourAssert.customEqual(actual, expected, [message])'
     ]
 };
-var modifiedCode = espowerSource(originalCode, filepath, options));
+var modifiedCode = espowerSource(originalCode, filepath, options);
 ```
