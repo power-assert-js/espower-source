@@ -20,7 +20,7 @@ function espowerSource(jsCode, filepath, options) {
     var jsAst, espowerOptions, modifiedAst, escodegenOutput, code, map;
 
     jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, raw: true, source: filepath});
-    espowerOptions = extend(extend(espower.defaultOptions(), options), {
+    espowerOptions = extend(espower.defaultOptions(), options, {
         destructive: true,
         path: filepath
     });
@@ -37,7 +37,7 @@ function espowerSource(jsCode, filepath, options) {
 
 module.exports = espowerSource;
 
-},{"convert-source-map":8,"escodegen":9,"espower":15,"esprima":17,"xtend":28}],2:[function(_dereq_,module,exports){
+},{"convert-source-map":8,"escodegen":9,"espower":14,"esprima":27,"xtend":39}],2:[function(_dereq_,module,exports){
 
 },{}],3:[function(_dereq_,module,exports){
 /*!
@@ -4141,698 +4141,7 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
 /* vim: set sw=4 ts=4 et tw=80 : */
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./package.json":14,"estraverse":10,"esutils":13,"source-map":18}],10:[function(_dereq_,module,exports){
-/*
-  Copyright (C) 2012-2013 Yusuke Suzuki <utatane.tea@gmail.com>
-  Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
-
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-/*jslint vars:false, bitwise:true*/
-/*jshint indent:4*/
-/*global exports:true, define:true*/
-(function (root, factory) {
-    'use strict';
-
-    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
-    // and plain browser loading,
-    if (typeof define === 'function' && define.amd) {
-        define(['exports'], factory);
-    } else if (typeof exports !== 'undefined') {
-        factory(exports);
-    } else {
-        factory((root.estraverse = {}));
-    }
-}(this, function (exports) {
-    'use strict';
-
-    var Syntax,
-        isArray,
-        VisitorOption,
-        VisitorKeys,
-        BREAK,
-        SKIP;
-
-    Syntax = {
-        AssignmentExpression: 'AssignmentExpression',
-        ArrayExpression: 'ArrayExpression',
-        ArrayPattern: 'ArrayPattern',
-        ArrowFunctionExpression: 'ArrowFunctionExpression',
-        BlockStatement: 'BlockStatement',
-        BinaryExpression: 'BinaryExpression',
-        BreakStatement: 'BreakStatement',
-        CallExpression: 'CallExpression',
-        CatchClause: 'CatchClause',
-        ClassBody: 'ClassBody',
-        ClassDeclaration: 'ClassDeclaration',
-        ClassExpression: 'ClassExpression',
-        ConditionalExpression: 'ConditionalExpression',
-        ContinueStatement: 'ContinueStatement',
-        DebuggerStatement: 'DebuggerStatement',
-        DirectiveStatement: 'DirectiveStatement',
-        DoWhileStatement: 'DoWhileStatement',
-        EmptyStatement: 'EmptyStatement',
-        ExpressionStatement: 'ExpressionStatement',
-        ForStatement: 'ForStatement',
-        ForInStatement: 'ForInStatement',
-        FunctionDeclaration: 'FunctionDeclaration',
-        FunctionExpression: 'FunctionExpression',
-        Identifier: 'Identifier',
-        IfStatement: 'IfStatement',
-        Literal: 'Literal',
-        LabeledStatement: 'LabeledStatement',
-        LogicalExpression: 'LogicalExpression',
-        MemberExpression: 'MemberExpression',
-        MethodDefinition: 'MethodDefinition',
-        NewExpression: 'NewExpression',
-        ObjectExpression: 'ObjectExpression',
-        ObjectPattern: 'ObjectPattern',
-        Program: 'Program',
-        Property: 'Property',
-        ReturnStatement: 'ReturnStatement',
-        SequenceExpression: 'SequenceExpression',
-        SwitchStatement: 'SwitchStatement',
-        SwitchCase: 'SwitchCase',
-        ThisExpression: 'ThisExpression',
-        ThrowStatement: 'ThrowStatement',
-        TryStatement: 'TryStatement',
-        UnaryExpression: 'UnaryExpression',
-        UpdateExpression: 'UpdateExpression',
-        VariableDeclaration: 'VariableDeclaration',
-        VariableDeclarator: 'VariableDeclarator',
-        WhileStatement: 'WhileStatement',
-        WithStatement: 'WithStatement',
-        YieldExpression: 'YieldExpression'
-    };
-
-    function ignoreJSHintError() { }
-
-    isArray = Array.isArray;
-    if (!isArray) {
-        isArray = function isArray(array) {
-            return Object.prototype.toString.call(array) === '[object Array]';
-        };
-    }
-
-    function deepCopy(obj) {
-        var ret = {}, key, val;
-        for (key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                val = obj[key];
-                if (typeof val === 'object' && val !== null) {
-                    ret[key] = deepCopy(val);
-                } else {
-                    ret[key] = val;
-                }
-            }
-        }
-        return ret;
-    }
-
-    function shallowCopy(obj) {
-        var ret = {}, key;
-        for (key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                ret[key] = obj[key];
-            }
-        }
-        return ret;
-    }
-    ignoreJSHintError(shallowCopy);
-
-    // based on LLVM libc++ upper_bound / lower_bound
-    // MIT License
-
-    function upperBound(array, func) {
-        var diff, len, i, current;
-
-        len = array.length;
-        i = 0;
-
-        while (len) {
-            diff = len >>> 1;
-            current = i + diff;
-            if (func(array[current])) {
-                len = diff;
-            } else {
-                i = current + 1;
-                len -= diff + 1;
-            }
-        }
-        return i;
-    }
-
-    function lowerBound(array, func) {
-        var diff, len, i, current;
-
-        len = array.length;
-        i = 0;
-
-        while (len) {
-            diff = len >>> 1;
-            current = i + diff;
-            if (func(array[current])) {
-                i = current + 1;
-                len -= diff + 1;
-            } else {
-                len = diff;
-            }
-        }
-        return i;
-    }
-    ignoreJSHintError(lowerBound);
-
-    VisitorKeys = {
-        AssignmentExpression: ['left', 'right'],
-        ArrayExpression: ['elements'],
-        ArrayPattern: ['elements'],
-        ArrowFunctionExpression: ['params', 'defaults', 'rest', 'body'],
-        BlockStatement: ['body'],
-        BinaryExpression: ['left', 'right'],
-        BreakStatement: ['label'],
-        CallExpression: ['callee', 'arguments'],
-        CatchClause: ['param', 'body'],
-        ClassBody: ['body'],
-        ClassDeclaration: ['id', 'body', 'superClass'],
-        ClassExpression: ['id', 'body', 'superClass'],
-        ConditionalExpression: ['test', 'consequent', 'alternate'],
-        ContinueStatement: ['label'],
-        DebuggerStatement: [],
-        DirectiveStatement: [],
-        DoWhileStatement: ['body', 'test'],
-        EmptyStatement: [],
-        ExpressionStatement: ['expression'],
-        ForStatement: ['init', 'test', 'update', 'body'],
-        ForInStatement: ['left', 'right', 'body'],
-        ForOfStatement: ['left', 'right', 'body'],
-        FunctionDeclaration: ['id', 'params', 'defaults', 'rest', 'body'],
-        FunctionExpression: ['id', 'params', 'defaults', 'rest', 'body'],
-        Identifier: [],
-        IfStatement: ['test', 'consequent', 'alternate'],
-        Literal: [],
-        LabeledStatement: ['label', 'body'],
-        LogicalExpression: ['left', 'right'],
-        MemberExpression: ['object', 'property'],
-        MethodDefinition: ['key', 'value'],
-        NewExpression: ['callee', 'arguments'],
-        ObjectExpression: ['properties'],
-        ObjectPattern: ['properties'],
-        Program: ['body'],
-        Property: ['key', 'value'],
-        ReturnStatement: ['argument'],
-        SequenceExpression: ['expressions'],
-        SwitchStatement: ['discriminant', 'cases'],
-        SwitchCase: ['test', 'consequent'],
-        ThisExpression: [],
-        ThrowStatement: ['argument'],
-        TryStatement: ['block', 'handlers', 'handler', 'guardedHandlers', 'finalizer'],
-        UnaryExpression: ['argument'],
-        UpdateExpression: ['argument'],
-        VariableDeclaration: ['declarations'],
-        VariableDeclarator: ['id', 'init'],
-        WhileStatement: ['test', 'body'],
-        WithStatement: ['object', 'body'],
-        YieldExpression: ['argument']
-    };
-
-    // unique id
-    BREAK = {};
-    SKIP = {};
-
-    VisitorOption = {
-        Break: BREAK,
-        Skip: SKIP
-    };
-
-    function Reference(parent, key) {
-        this.parent = parent;
-        this.key = key;
-    }
-
-    Reference.prototype.replace = function replace(node) {
-        this.parent[this.key] = node;
-    };
-
-    function Element(node, path, wrap, ref) {
-        this.node = node;
-        this.path = path;
-        this.wrap = wrap;
-        this.ref = ref;
-    }
-
-    function Controller() { }
-
-    // API:
-    // return property path array from root to current node
-    Controller.prototype.path = function path() {
-        var i, iz, j, jz, result, element;
-
-        function addToPath(result, path) {
-            if (isArray(path)) {
-                for (j = 0, jz = path.length; j < jz; ++j) {
-                    result.push(path[j]);
-                }
-            } else {
-                result.push(path);
-            }
-        }
-
-        // root node
-        if (!this.__current.path) {
-            return null;
-        }
-
-        // first node is sentinel, second node is root element
-        result = [];
-        for (i = 2, iz = this.__leavelist.length; i < iz; ++i) {
-            element = this.__leavelist[i];
-            addToPath(result, element.path);
-        }
-        addToPath(result, this.__current.path);
-        return result;
-    };
-
-    // API:
-    // return array of parent elements
-    Controller.prototype.parents = function parents() {
-        var i, iz, result;
-
-        // first node is sentinel
-        result = [];
-        for (i = 1, iz = this.__leavelist.length; i < iz; ++i) {
-            result.push(this.__leavelist[i].node);
-        }
-
-        return result;
-    };
-
-    // API:
-    // return current node
-    Controller.prototype.current = function current() {
-        return this.__current.node;
-    };
-
-    Controller.prototype.__execute = function __execute(callback, element) {
-        var previous, result;
-
-        result = undefined;
-
-        previous  = this.__current;
-        this.__current = element;
-        this.__state = null;
-        if (callback) {
-            result = callback.call(this, element.node, this.__leavelist[this.__leavelist.length - 1].node);
-        }
-        this.__current = previous;
-
-        return result;
-    };
-
-    // API:
-    // notify control skip / break
-    Controller.prototype.notify = function notify(flag) {
-        this.__state = flag;
-    };
-
-    // API:
-    // skip child nodes of current node
-    Controller.prototype.skip = function () {
-        this.notify(SKIP);
-    };
-
-    // API:
-    // break traversals
-    Controller.prototype['break'] = function () {
-        this.notify(BREAK);
-    };
-
-    Controller.prototype.__initialize = function(root, visitor) {
-        this.visitor = visitor;
-        this.root = root;
-        this.__worklist = [];
-        this.__leavelist = [];
-        this.__current = null;
-        this.__state = null;
-    };
-
-    Controller.prototype.traverse = function traverse(root, visitor) {
-        var worklist,
-            leavelist,
-            element,
-            node,
-            nodeType,
-            ret,
-            key,
-            current,
-            current2,
-            candidates,
-            candidate,
-            sentinel;
-
-        this.__initialize(root, visitor);
-
-        sentinel = {};
-
-        // reference
-        worklist = this.__worklist;
-        leavelist = this.__leavelist;
-
-        // initialize
-        worklist.push(new Element(root, null, null, null));
-        leavelist.push(new Element(null, null, null, null));
-
-        while (worklist.length) {
-            element = worklist.pop();
-
-            if (element === sentinel) {
-                element = leavelist.pop();
-
-                ret = this.__execute(visitor.leave, element);
-
-                if (this.__state === BREAK || ret === BREAK) {
-                    return;
-                }
-                continue;
-            }
-
-            if (element.node) {
-
-                ret = this.__execute(visitor.enter, element);
-
-                if (this.__state === BREAK || ret === BREAK) {
-                    return;
-                }
-
-                worklist.push(sentinel);
-                leavelist.push(element);
-
-                if (this.__state === SKIP || ret === SKIP) {
-                    continue;
-                }
-
-                node = element.node;
-                nodeType = element.wrap || node.type;
-                candidates = VisitorKeys[nodeType];
-
-                current = candidates.length;
-                while ((current -= 1) >= 0) {
-                    key = candidates[current];
-                    candidate = node[key];
-                    if (!candidate) {
-                        continue;
-                    }
-
-                    if (!isArray(candidate)) {
-                        worklist.push(new Element(candidate, key, null, null));
-                        continue;
-                    }
-
-                    current2 = candidate.length;
-                    while ((current2 -= 1) >= 0) {
-                        if (!candidate[current2]) {
-                            continue;
-                        }
-                        if ((nodeType === Syntax.ObjectExpression || nodeType === Syntax.ObjectPattern) && 'properties' === candidates[current]) {
-                            element = new Element(candidate[current2], [key, current2], 'Property', null);
-                        } else {
-                            element = new Element(candidate[current2], [key, current2], null, null);
-                        }
-                        worklist.push(element);
-                    }
-                }
-            }
-        }
-    };
-
-    Controller.prototype.replace = function replace(root, visitor) {
-        var worklist,
-            leavelist,
-            node,
-            nodeType,
-            target,
-            element,
-            current,
-            current2,
-            candidates,
-            candidate,
-            sentinel,
-            outer,
-            key;
-
-        this.__initialize(root, visitor);
-
-        sentinel = {};
-
-        // reference
-        worklist = this.__worklist;
-        leavelist = this.__leavelist;
-
-        // initialize
-        outer = {
-            root: root
-        };
-        element = new Element(root, null, null, new Reference(outer, 'root'));
-        worklist.push(element);
-        leavelist.push(element);
-
-        while (worklist.length) {
-            element = worklist.pop();
-
-            if (element === sentinel) {
-                element = leavelist.pop();
-
-                target = this.__execute(visitor.leave, element);
-
-                // node may be replaced with null,
-                // so distinguish between undefined and null in this place
-                if (target !== undefined && target !== BREAK && target !== SKIP) {
-                    // replace
-                    element.ref.replace(target);
-                }
-
-                if (this.__state === BREAK || target === BREAK) {
-                    return outer.root;
-                }
-                continue;
-            }
-
-            target = this.__execute(visitor.enter, element);
-
-            // node may be replaced with null,
-            // so distinguish between undefined and null in this place
-            if (target !== undefined && target !== BREAK && target !== SKIP) {
-                // replace
-                element.ref.replace(target);
-                element.node = target;
-            }
-
-            if (this.__state === BREAK || target === BREAK) {
-                return outer.root;
-            }
-
-            // node may be null
-            node = element.node;
-            if (!node) {
-                continue;
-            }
-
-            worklist.push(sentinel);
-            leavelist.push(element);
-
-            if (this.__state === SKIP || target === SKIP) {
-                continue;
-            }
-
-            nodeType = element.wrap || node.type;
-            candidates = VisitorKeys[nodeType];
-
-            current = candidates.length;
-            while ((current -= 1) >= 0) {
-                key = candidates[current];
-                candidate = node[key];
-                if (!candidate) {
-                    continue;
-                }
-
-                if (!isArray(candidate)) {
-                    worklist.push(new Element(candidate, key, null, new Reference(node, key)));
-                    continue;
-                }
-
-                current2 = candidate.length;
-                while ((current2 -= 1) >= 0) {
-                    if (!candidate[current2]) {
-                        continue;
-                    }
-                    if (nodeType === Syntax.ObjectExpression && 'properties' === candidates[current]) {
-                        element = new Element(candidate[current2], [key, current2], 'Property', new Reference(candidate, current2));
-                    } else {
-                        element = new Element(candidate[current2], [key, current2], null, new Reference(candidate, current2));
-                    }
-                    worklist.push(element);
-                }
-            }
-        }
-
-        return outer.root;
-    };
-
-    function traverse(root, visitor) {
-        var controller = new Controller();
-        return controller.traverse(root, visitor);
-    }
-
-    function replace(root, visitor) {
-        var controller = new Controller();
-        return controller.replace(root, visitor);
-    }
-
-    function extendCommentRange(comment, tokens) {
-        var target;
-
-        target = upperBound(tokens, function search(token) {
-            return token.range[0] > comment.range[0];
-        });
-
-        comment.extendedRange = [comment.range[0], comment.range[1]];
-
-        if (target !== tokens.length) {
-            comment.extendedRange[1] = tokens[target].range[0];
-        }
-
-        target -= 1;
-        if (target >= 0) {
-            comment.extendedRange[0] = tokens[target].range[1];
-        }
-
-        return comment;
-    }
-
-    function attachComments(tree, providedComments, tokens) {
-        // At first, we should calculate extended comment ranges.
-        var comments = [], comment, len, i, cursor;
-
-        if (!tree.range) {
-            throw new Error('attachComments needs range information');
-        }
-
-        // tokens array is empty, we attach comments to tree as 'leadingComments'
-        if (!tokens.length) {
-            if (providedComments.length) {
-                for (i = 0, len = providedComments.length; i < len; i += 1) {
-                    comment = deepCopy(providedComments[i]);
-                    comment.extendedRange = [0, tree.range[0]];
-                    comments.push(comment);
-                }
-                tree.leadingComments = comments;
-            }
-            return tree;
-        }
-
-        for (i = 0, len = providedComments.length; i < len; i += 1) {
-            comments.push(extendCommentRange(deepCopy(providedComments[i]), tokens));
-        }
-
-        // This is based on John Freeman's implementation.
-        cursor = 0;
-        traverse(tree, {
-            enter: function (node) {
-                var comment;
-
-                while (cursor < comments.length) {
-                    comment = comments[cursor];
-                    if (comment.extendedRange[1] > node.range[0]) {
-                        break;
-                    }
-
-                    if (comment.extendedRange[1] === node.range[0]) {
-                        if (!node.leadingComments) {
-                            node.leadingComments = [];
-                        }
-                        node.leadingComments.push(comment);
-                        comments.splice(cursor, 1);
-                    } else {
-                        cursor += 1;
-                    }
-                }
-
-                // already out of owned node
-                if (cursor === comments.length) {
-                    return VisitorOption.Break;
-                }
-
-                if (comments[cursor].extendedRange[0] > node.range[1]) {
-                    return VisitorOption.Skip;
-                }
-            }
-        });
-
-        cursor = 0;
-        traverse(tree, {
-            leave: function (node) {
-                var comment;
-
-                while (cursor < comments.length) {
-                    comment = comments[cursor];
-                    if (node.range[1] < comment.extendedRange[0]) {
-                        break;
-                    }
-
-                    if (node.range[1] === comment.extendedRange[0]) {
-                        if (!node.trailingComments) {
-                            node.trailingComments = [];
-                        }
-                        node.trailingComments.push(comment);
-                        comments.splice(cursor, 1);
-                    } else {
-                        cursor += 1;
-                    }
-                }
-
-                // already out of owned node
-                if (cursor === comments.length) {
-                    return VisitorOption.Break;
-                }
-
-                if (comments[cursor].extendedRange[0] > node.range[1]) {
-                    return VisitorOption.Skip;
-                }
-            }
-        });
-
-        return tree;
-    }
-
-    exports.version = '1.5.1-dev';
-    exports.Syntax = Syntax;
-    exports.traverse = traverse;
-    exports.replace = replace;
-    exports.attachComments = attachComments;
-    exports.VisitorKeys = VisitorKeys;
-    exports.VisitorOption = VisitorOption;
-    exports.Controller = Controller;
-}));
-/* vim: set sw=4 ts=4 et tw=80 : */
-
-},{}],11:[function(_dereq_,module,exports){
+},{"./package.json":13,"estraverse":28,"esutils":12,"source-map":29}],10:[function(_dereq_,module,exports){
 /*
   Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
@@ -4924,7 +4233,7 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],12:[function(_dereq_,module,exports){
+},{}],11:[function(_dereq_,module,exports){
 /*
   Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
@@ -5043,7 +4352,7 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{"./code":11}],13:[function(_dereq_,module,exports){
+},{"./code":10}],12:[function(_dereq_,module,exports){
 /*
   Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
@@ -5077,7 +4386,7 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{"./code":11,"./keyword":12}],14:[function(_dereq_,module,exports){
+},{"./code":10,"./keyword":11}],13:[function(_dereq_,module,exports){
 module.exports={
   "name": "escodegen",
   "description": "ECMAScript code generator",
@@ -5149,516 +4458,1224 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/escodegen/-/escodegen-1.3.3.tgz"
 }
 
-},{}],15:[function(_dereq_,module,exports){
+},{}],14:[function(_dereq_,module,exports){
 /**
- * espower.js - Power Assert feature instrumentor based on the Mozilla JavaScript AST.
+ * espower - Power Assert feature instrumentor based on the Mozilla JavaScript AST.
  *
  * https://github.com/twada/espower
  *
  * Copyright (c) 2013-2014 Takuto Wada
  * Licensed under the MIT license.
- *   https://raw.github.com/twada/espower/master/MIT-LICENSE.txt
- *
- * A part of deepCopy function is:
- *   Copyright (C) 2012 Yusuke Suzuki (twitter: @Constellation) and other contributors.
- *   Released under the BSD license.
- *   https://github.com/Constellation/esmangle/raw/master/LICENSE.BSD
- *
- * A part of extend function is:
- *   Copyright 2012 jQuery Foundation and other contributors
- *   Released under the MIT license.
- *   http://jquery.org/license
+ *   https://github.com/twada/espower/blob/master/MIT-LICENSE.txt
  */
-(function (root, factory) {
-    'use strict';
+'use strict';
 
-    // using returnExports UMD pattern
-    if (typeof define === 'function' && define.amd) {
-        define(['estraverse', 'escodegen'], factory);
-    } else if (typeof exports === 'object') {
-        module.exports = factory(_dereq_('estraverse'), _dereq_('escodegen'));
-    } else {
-        root.espower = factory(root.estraverse, root.escodegen);
-    }
-}(this, function (estraverse, escodegen) {
-    'use strict';
+var defaultOptions = _dereq_('./lib/default-options'),
+    Instrumentor = _dereq_('./lib/instrumentor'),
+    deepCopy = _dereq_('./lib/ast-deepcopy'),
+    extend = _dereq_('xtend');
 
-    // see: https://github.com/Constellation/escodegen/issues/115
-    if (typeof define === 'function' && define.amd) {
-        escodegen = window.escodegen;
-    }
+/**
+ * Instrument power assert feature into code. Mozilla JS AST in, Mozilla JS AST out.
+ * @param ast JavaScript Mozilla JS AST to instrument (directly modified if destructive option is truthy)
+ * @param options Instrumentation options.
+ * @return instrumented AST
+ */
+function espower (ast, options) {
+    var instrumentor = new Instrumentor(extend(defaultOptions(), options));
+    return instrumentor.instrument(ast);
+}
 
-    var syntax = estraverse.Syntax,
-        deepCopy,
-        supportedNodeTypes = [
-            syntax.Identifier,
-            syntax.MemberExpression,
-            syntax.CallExpression,
-            syntax.UnaryExpression,
-            syntax.BinaryExpression,
-            syntax.LogicalExpression,
-            syntax.AssignmentExpression,
-            syntax.ObjectExpression,
-            syntax.NewExpression,
-            syntax.ArrayExpression,
-            syntax.ConditionalExpression,
-            syntax.UpdateExpression,
-            syntax.Property
-        ];
+espower.deepCopy = deepCopy;
+espower.defaultOptions = defaultOptions;
+module.exports = espower;
 
+},{"./lib/ast-deepcopy":15,"./lib/default-options":16,"./lib/instrumentor":17,"xtend":39}],15:[function(_dereq_,module,exports){
+/**
+ * Copyright (C) 2012 Yusuke Suzuki (twitter: @Constellation) and other contributors.
+ * Released under the BSD license.
+ * https://github.com/Constellation/esmangle/blob/master/LICENSE.BSD
+ */
+'use strict';
 
-    function defaultOptions () {
-        return {
-            destructive: false,
-            powerAssertVariableName: 'assert',
-            escodegenOptions: {
-                format: {
-                    indent: {
-                        style: ''
-                    },
-                    newline: ''
-                },
-                verbatim: 'x-verbatim-espower'
-            },
-            targetMethods: {
-                oneArg: [
-                    'ok'
-                ],
-                twoArgs: [
-                    'equal',
-                    'notEqual',
-                    'strictEqual',
-                    'notStrictEqual',
-                    'deepEqual',
-                    'notDeepEqual'
-                ]
-            }
-        };
-    }
+var isArray = Array.isArray || function isArray (array) {
+    return Object.prototype.toString.call(array) === '[object Array]';
+};
 
-
-    /**
-     * Instrument power assert feature into code. Mozilla JS AST in, Mozilla JS AST out.
-     * @param ast JavaScript Mozilla JS AST to instrument (directly modified if destructive option is truthy)
-     * @param options Instrumentation options.
-     * @return instrumented AST
-     */
-    function espower (ast, options) {
-        var instrumentor = new Instrumentor(extend(defaultOptions(), (options || {})));
-        return instrumentor.instrument(ast);
-    }
-
-
-    function Instrumentor (options) {
-        ensureOptionPrerequisites(options);
-        this.options = options;
-    }
-
-    Instrumentor.prototype.instrument = function (ast) {
-        ensureAstPrerequisites(ast, this.options);
-        var that = this,
-            assertionPath,
-            argumentPath,
-            canonicalCode,
-            lineNum,
-            argumentModified = false,
-            skipping = false,
-            result = (this.options.destructive) ? ast : deepCopy(ast);
-
-        estraverse.replace(result, {
-            enter: function (currentNode, parentNode) {
-                var controller = this,
-                    path = controller.path(),
-                    currentPath = path ? path[path.length - 1] : null;
-                //console.log('enter currentNode:' + currentNode.type + ' parentNode: ' + parentNode.type + ' path: ' + path);
-
-                if (argumentPath) {
-                    if ((!isSupportedNodeType(currentNode)) ||
-                        (isLeftHandSideOfAssignment(parentNode, currentPath)) ||
-                        (isObjectLiteralKey(parentNode, currentPath)) ||
-                        (isUpdateExpression(parentNode)) ||
-                        (isCallExpressionWithNonComputedMemberExpression(currentNode, parentNode, currentPath)) ||
-                        (isTypeOfOrDeleteUnaryExpression(currentNode, parentNode, currentPath))) {
-                        skipping = true;
-                        return estraverse.VisitorOption.Skip;
-                    }
+function deepCopyInternal (obj, result) {
+    var key, val;
+    for (key in obj) {
+        if (key.lastIndexOf('__', 0) === 0) {
+            continue;
+        }
+        if (obj.hasOwnProperty(key)) {
+            val = obj[key];
+            if (typeof val === 'object' && val !== null) {
+                if (val instanceof RegExp) {
+                    val = new RegExp(val);
                 } else {
-                    if (!parentNode || parentNode.type !== syntax.CallExpression || !isSupportedNodeType(currentNode)) {
-                        return undefined;
-                    }
-                    if (that.isCalleeOfTargetAssertion(currentNode)) {
-                        // entering target assertion
-                        lineNum = parentNode.loc.start.line;
-                        canonicalCode = generateCanonicalCode(parentNode, that.options.escodegenOptions);
-                        assertionPath = path.slice(0, -1);
-                        return undefined;
-                    }
-                    if (that.isTargetAssertionArgument(parentNode, currentNode)) {
-                        // entering target argument
-                        argumentPath = path;
-                        return undefined;
-                    }
+                    val = deepCopyInternal(val, isArray(val) ? [] : {});
                 }
+            }
+            result[key] = val;
+        }
+    }
+    return result;
+}
+
+function deepCopy (obj) {
+    return deepCopyInternal(obj, isArray(obj) ? [] : {});
+}
+
+module.exports = deepCopy;
+
+},{}],16:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function defaultOptions () {
+    return {
+        destructive: false,
+        patterns: [
+            'assert(value, [message])',
+            'assert.ok(value, [message])',
+            'assert.equal(actual, expected, [message])',
+            'assert.notEqual(actual, expected, [message])',
+            'assert.strictEqual(actual, expected, [message])',
+            'assert.notStrictEqual(actual, expected, [message])',
+            'assert.deepEqual(actual, expected, [message])',
+            'assert.notDeepEqual(actual, expected, [message])'
+        ]
+    };
+};
+
+},{}],17:[function(_dereq_,module,exports){
+'use strict';
+
+var estraverse = _dereq_('estraverse'),
+    escodegen = _dereq_('escodegen'),
+    escallmatch = _dereq_('escallmatch'),
+    espurify = _dereq_('espurify'),
+    deepCopy = _dereq_('./ast-deepcopy'),
+    typeName = _dereq_('type-name'),
+    syntax = estraverse.Syntax,
+    supportedNodeTypes = [
+        syntax.Identifier,
+        syntax.MemberExpression,
+        syntax.CallExpression,
+        syntax.UnaryExpression,
+        syntax.BinaryExpression,
+        syntax.LogicalExpression,
+        syntax.AssignmentExpression,
+        syntax.ObjectExpression,
+        syntax.NewExpression,
+        syntax.ArrayExpression,
+        syntax.ConditionalExpression,
+        syntax.UpdateExpression,
+        syntax.Property
+    ],
+    canonicalCodeOptions = {
+        format: {
+            indent: {
+                style: ''
+            },
+            newline: ''
+        },
+        verbatim: 'x-verbatim-espower'
+    };
+
+// see: https://github.com/Constellation/escodegen/issues/115
+if (typeof define === 'function' && define.amd) {
+    escodegen = window.escodegen;
+}
+
+function Instrumentor (options) {
+    ensureOptionPrerequisites(options);
+    this.options = options;
+    this.matchers = options.patterns.map(escallmatch);
+}
+
+Instrumentor.prototype.instrument = function (ast) {
+    ensureAstPrerequisites(ast, this.options);
+    var that = this,
+        assertionPath,
+        argumentPath,
+        canonicalCode,
+        powerAssertCallee,
+        lineNum,
+        argumentModified = false,
+        skipping = false,
+        result = (this.options.destructive) ? ast : deepCopy(ast);
+
+    estraverse.replace(result, {
+        enter: function (currentNode, parentNode) {
+            var controller = this,
+                path = controller.path(),
+                currentPath = path ? path[path.length - 1] : null;
+            //console.log('enter currentNode:' + currentNode.type + ' parentNode: ' + parentNode.type + ' path: ' + path);
+
+            if (argumentPath) {
+                if ((!isSupportedNodeType(currentNode)) ||
+                    (isLeftHandSideOfAssignment(parentNode, currentPath)) ||
+                    (isObjectLiteralKey(parentNode, currentPath)) ||
+                    (isUpdateExpression(parentNode)) ||
+                    (isCallExpressionWithNonComputedMemberExpression(currentNode, parentNode, currentPath)) ||
+                    (isTypeOfOrDeleteUnaryExpression(currentNode, parentNode, currentPath))) {
+                    skipping = true;
+                    return estraverse.VisitorOption.Skip;
+                }
+            } else {
+                if (!parentNode) {
+                    return undefined;
+                }
+                if (that.matchers.some(function (matcher) { return matcher.test(currentNode); })) {
+                    // entering target assertion
+                    lineNum = currentNode.loc.start.line;
+                    canonicalCode = generateCanonicalCode(currentNode);
+                    assertionPath = [].concat(path);
+                    powerAssertCallee = guessPowerAssertCalleeFor(currentNode.callee);
+                    return undefined;
+                }
+                if (parentNode.type !== syntax.CallExpression || !isSupportedNodeType(currentNode)) {
+                    return undefined;
+                }
+                if (parentNode.callee === currentNode) {
+                    // skip callee
+                    return undefined;
+                }
+
+                var argumentMatchResults = that.matchers.map(function (matcher) {
+                    return matcher.matchArgument(currentNode, parentNode);
+                }).filter(function (result) {
+                    return result !== null;
+                });
+                if (argumentMatchResults.length === 1) {
+                    if (argumentMatchResults[0].name === 'message' && argumentMatchResults[0].kind === 'optional') {
+                        // skip optional message argument
+                        return undefined;
+                    }
+                    // entering target argument
+                    argumentPath = [].concat(path);
+                    return undefined;
+                }
+            }
+            return undefined;
+        },
+
+        leave: function (currentNode, parentNode) {
+            var controller = this,
+                path = controller.path(),
+                resultTree = currentNode,
+                relativeEsPath;
+            //console.log('leave ' + currentNode.type + ' path: ' + path);
+
+            if (skipping) {
+                skipping = false;
                 return undefined;
-            },
-
-            leave: function (currentNode, parentNode) {
-                var controller = this,
-                    path = controller.path(),
-                    resultTree = currentNode,
-                    relativeEsPath;
-                //console.log('leave ' + currentNode.type + ' path: ' + path);
-
-                if (skipping) {
-                    skipping = false;
-                    return undefined;
-                }
-
-                if (isPathIdentical(assertionPath, path)) {
-                    // leaving target assertion
-                    canonicalCode = null;
-                    lineNum = null;
-                    assertionPath = null;
-                    return undefined;
-                }
-
-                if (!argumentPath) {
-                    return undefined;
-                }
-
-                if (isLastPieceOfFunctionCall(parentNode, currentNode)) {
-                    return undefined;
-                }
-
-                relativeEsPath = path.slice(assertionPath.length);
-
-                //console.log('leave ' + currentNode.type + ' path: ' + path + ' ' + currentNode.name);
-                switch(currentNode.type) {
-                case syntax.Identifier:
-                case syntax.MemberExpression:
-                case syntax.CallExpression:
-                case syntax.UnaryExpression:
-                case syntax.BinaryExpression:
-                case syntax.LogicalExpression:
-                case syntax.AssignmentExpression:
-                case syntax.UpdateExpression:
-                case syntax.NewExpression:
-                    resultTree = that.captureNode(currentNode, relativeEsPath);
-                    argumentModified = true;
-                    break;
-                default:
-                    break;
-                }
-
-                if (isPathIdentical(argumentPath, path)) {
-                    // leaving target argument
-                    argumentPath = null;
-                    if (argumentModified) {
-                        argumentModified = false;
-                        return that.captureAssertion(resultTree, canonicalCode, lineNum);
-                    }
-                }
-
-                return resultTree;
             }
-        });
-        return result;
-    };
 
-    Instrumentor.prototype.isCalleeOfTargetAssertion = function (node) {
-        return numberOfTargetArguments(node, this.options) !== 0;
-    };
+            if (isPathIdentical(assertionPath, path)) {
+                // leaving target assertion
+                canonicalCode = null;
+                lineNum = null;
+                assertionPath = null;
+                powerAssertCallee = null;
+                return undefined;
+            }
 
-    Instrumentor.prototype.isTargetAssertionArgument = function (parentNode, currentNode) {
-        var numTargetArgs, indexOfCurrentArg;
-        numTargetArgs = numberOfTargetArguments(parentNode.callee, this.options);
-        if (numTargetArgs === 0) {
-            return false;
-        }
-        indexOfCurrentArg = parentNode.arguments.indexOf(currentNode);
-        return (indexOfCurrentArg < numTargetArgs);
-    };
+            if (!argumentPath) {
+                return undefined;
+            }
 
-    Instrumentor.prototype.captureAssertion = function (node, canonicalCode, lineNum) {
-        var n = newNodeWithLocationCopyOf(node),
-            props = [];
-        addLiteralTo(props, n, 'content', canonicalCode);
-        addLiteralTo(props, n, 'filepath', this.options.path);
-        addLiteralTo(props, n, 'line', lineNum);
-        return n({
-            type: syntax.CallExpression,
-            callee: n({
-                type: syntax.MemberExpression,
-                computed: false,
-                object: n({
-                    type: syntax.Identifier,
-                    name: this.options.powerAssertVariableName
-                }),
-                property: n({
-                    type: syntax.Identifier,
-                    name: '_expr'
-                })
-            }),
-            arguments: [node].concat(n({
-                type: syntax.ObjectExpression,
-                properties: props
-            }))
-        });
-    };
+            if (isCalleeOfParent(currentNode, parentNode)) {
+                return undefined;
+            }
 
-    Instrumentor.prototype.captureNode = function (target, relativeEsPath) {
-        var n = newNodeWithLocationCopyOf(target);
-        return n({
-            type: syntax.CallExpression,
-            callee: n({
-                type: syntax.MemberExpression,
-                computed: false,
-                object: n({
-                    type: syntax.Identifier,
-                    name: this.options.powerAssertVariableName
-                }),
-                property: n({
-                    type: syntax.Identifier,
-                    name: '_capt'
-                })
-            }),
-            arguments: [
-                target,
-                n({
-                    type: syntax.Literal,
-                    value: relativeEsPath.join('/')
-                })
-            ]
-        });
-    };
+            relativeEsPath = path.slice(assertionPath.length);
 
+            //console.log('leave ' + currentNode.type + ' path: ' + path + ' ' + currentNode.name);
+            switch(currentNode.type) {
+            case syntax.Identifier:
+            case syntax.MemberExpression:
+            case syntax.CallExpression:
+            case syntax.UnaryExpression:
+            case syntax.BinaryExpression:
+            case syntax.LogicalExpression:
+            case syntax.AssignmentExpression:
+            case syntax.UpdateExpression:
+            case syntax.NewExpression:
+                resultTree = that.captureNode(currentNode, relativeEsPath, powerAssertCallee);
+                argumentModified = true;
+                break;
+            default:
+                break;
+            }
 
-    function generateCanonicalCode(node, escodegenOptions) {
-        var ast = deepCopy(node);
-        estraverse.replace(ast, {
-            leave: function (currentNode, parentNode) {
-                if (currentNode.type === syntax.Literal && typeof currentNode.raw !== 'undefined') {
-                    currentNode['x-verbatim-espower'] = {
-                        content : currentNode.raw,
-                        precedence : escodegen.Precedence.Primary
-                    };
-                    return currentNode;
-                } else {
-                    return undefined;
+            if (isPathIdentical(argumentPath, path)) {
+                // leaving target argument
+                argumentPath = null;
+                if (argumentModified) {
+                    argumentModified = false;
+                    return that.captureArgument(resultTree, canonicalCode, powerAssertCallee, lineNum);
                 }
             }
-        });
-        return escodegen.generate(ast, escodegenOptions);
-    }
 
-    function addLiteralTo(props, createNode, name, data) {
-        if (data) {
-            addToProps(props, createNode, name, createNode({
-                type: syntax.Literal,
-                value: data
-            }));
+            return resultTree;
         }
-    }
+    });
+    return result;
+};
 
-    function addToProps(props, createNode, name, value) {
-        props.push(createNode({
-            type: syntax.Property,
-            key: createNode({
+Instrumentor.prototype.captureArgument = function (node, canonicalCode, powerAssertCallee, lineNum) {
+    var n = newNodeWithLocationCopyOf(node),
+        props = [],
+        newCallee = updateLocRecursively(espurify(powerAssertCallee), n);
+    addLiteralTo(props, n, 'content', canonicalCode);
+    addLiteralTo(props, n, 'filepath', this.options.path);
+    addLiteralTo(props, n, 'line', lineNum);
+    return n({
+        type: syntax.CallExpression,
+        callee: n({
+            type: syntax.MemberExpression,
+            computed: false,
+            object: newCallee,
+            property: n({
                 type: syntax.Identifier,
-                name: name
-            }),
-            value: value,
-            kind: 'init'
+                name: '_expr'
+            })
+        }),
+        arguments: [node].concat(n({
+            type: syntax.ObjectExpression,
+            properties: props
+        }))
+    });
+};
+
+Instrumentor.prototype.captureNode = function (target, relativeEsPath, powerAssertCallee) {
+    var n = newNodeWithLocationCopyOf(target),
+        newCallee = updateLocRecursively(espurify(powerAssertCallee), n);
+    return n({
+        type: syntax.CallExpression,
+        callee: n({
+            type: syntax.MemberExpression,
+            computed: false,
+            object: newCallee,
+            property: n({
+                type: syntax.Identifier,
+                name: '_capt'
+            })
+        }),
+        arguments: [
+            target,
+            n({
+                type: syntax.Literal,
+                value: relativeEsPath.join('/')
+            })
+        ]
+    });
+};
+
+function updateLocRecursively (node, n) {
+    estraverse.replace(node, {
+        leave: function (currentNode, parentNode) {
+            return n(currentNode);
+        }
+    });
+    return node;
+}
+
+function guessPowerAssertCalleeFor (node) {
+    switch(node.type) {
+    case syntax.Identifier:
+        return node;
+    case syntax.MemberExpression:
+        return node.object; // Returns browser.assert when browser.assert.element(selector)
+    }
+    return null;
+}
+
+function generateCanonicalCode(node) {
+    var ast = deepCopy(node);
+    estraverse.replace(ast, {
+        leave: function (currentNode, parentNode) {
+            if (currentNode.type === syntax.Literal && typeof currentNode.raw !== 'undefined') {
+                currentNode['x-verbatim-espower'] = {
+                    content : currentNode.raw,
+                    precedence : escodegen.Precedence.Primary
+                };
+                return currentNode;
+            } else {
+                return undefined;
+            }
+        }
+    });
+    return escodegen.generate(ast, canonicalCodeOptions);
+}
+
+function addLiteralTo(props, createNode, name, data) {
+    if (data) {
+        addToProps(props, createNode, name, createNode({
+            type: syntax.Literal,
+            value: data
         }));
     }
+}
 
-    function isLastPieceOfFunctionCall(parentNode, currentNode) {
-        return (parentNode.type === syntax.CallExpression || parentNode.type === syntax.NewExpression) &&
-            parentNode.callee === currentNode;
+function addToProps(props, createNode, name, value) {
+    props.push(createNode({
+        type: syntax.Property,
+        key: createNode({
+            type: syntax.Identifier,
+            name: name
+        }),
+        value: value,
+        kind: 'init'
+    }));
+}
+
+function isCalleeOfParent(currentNode, parentNode) {
+    return (parentNode.type === syntax.CallExpression || parentNode.type === syntax.NewExpression) &&
+        parentNode.callee === currentNode;
+}
+
+function isLeftHandSideOfAssignment(parentNode, currentPath) {
+    // Do not instrument left due to 'Invalid left-hand side in assignment'
+    return parentNode.type === syntax.AssignmentExpression && currentPath === 'left';
+}
+
+function isObjectLiteralKey(parentNode, currentPath) {
+    // Do not instrument Object literal key
+    return parentNode.type === syntax.Property && parentNode.kind === 'init' && currentPath === 'key';
+}
+
+function isUpdateExpression(parentNode) {
+    // Just wrap UpdateExpression, not digging in.
+    return parentNode.type === syntax.UpdateExpression;
+}
+
+function isCallExpressionWithNonComputedMemberExpression(currentNode, parentNode, currentPath) {
+    // Do not instrument non-computed property of MemberExpression within CallExpression.
+    return currentNode.type === syntax.Identifier && parentNode.type === syntax.MemberExpression && !parentNode.computed && currentPath === 'property';
+}
+
+function isTypeOfOrDeleteUnaryExpression(currentNode, parentNode, currentPath) {
+    // 'typeof Identifier' or 'delete Identifier' is not instrumented
+    return currentNode.type === syntax.Identifier && parentNode.type === syntax.UnaryExpression && (parentNode.operator === 'typeof' || parentNode.operator === 'delete') && currentPath === 'argument';
+}
+
+function isPathIdentical(path1, path2) {
+    if (!path1 || !path2) {
+        return false;
     }
+    return path1.join('/') === path2.join('/');
+}
 
-    function isLeftHandSideOfAssignment(parentNode, currentPath) {
-        // Do not instrument left due to 'Invalid left-hand side in assignment'
-        return parentNode.type === syntax.AssignmentExpression && currentPath === 'left';
-    }
-
-    function isObjectLiteralKey(parentNode, currentPath) {
-        // Do not instrument Object literal key
-        return parentNode.type === syntax.Property && parentNode.kind === 'init' && currentPath === 'key';
-    }
-
-    function isUpdateExpression(parentNode) {
-        // Just wrap UpdateExpression, not digging in.
-        return parentNode.type === syntax.UpdateExpression;
-    }
-
-    function isCallExpressionWithNonComputedMemberExpression(currentNode, parentNode, currentPath) {
-        // Do not instrument non-computed property of MemberExpression within CallExpression.
-        return currentNode.type === syntax.Identifier && parentNode.type === syntax.MemberExpression && !parentNode.computed && currentPath === 'property';
-    }
-
-    function isTypeOfOrDeleteUnaryExpression(currentNode, parentNode, currentPath) {
-        // 'typeof Identifier' or 'delete Identifier' is not instrumented
-        return currentNode.type === syntax.Identifier && parentNode.type === syntax.UnaryExpression && (parentNode.operator === 'typeof' || parentNode.operator === 'delete') && currentPath === 'argument';
-    }
-
-    function isPathIdentical(path1, path2) {
-        if (!path1 || !path2) {
-            return false;
+function newNodeWithLocationCopyOf (original) {
+    return function (newNode) {
+        if (typeof original.loc !== 'undefined') {
+            newNode.loc = deepCopy(original.loc);
         }
-        return path1.join('/') === path2.join('/');
-    }
+        if (typeof original.range !== 'undefined') {
+            newNode.range = deepCopy(original.range);
+        }
+        return newNode;
+    };
+}
 
-    function newNodeWithLocationCopyOf (original) {
-        return function (newNode) {
-            if (typeof original.loc !== 'undefined') {
-                newNode.loc = deepCopy(original.loc);
-            }
-            if (typeof original.range !== 'undefined') {
-                newNode.range = deepCopy(original.range);
-            }
-            return newNode;
+function isSupportedNodeType (node) {
+    return supportedNodeTypes.indexOf(node.type) !== -1;
+}
+
+function ensureAstPrerequisites (ast, options) {
+    var errorMessage;
+    if (typeof ast.loc === 'undefined') {
+        errorMessage = 'JavaScript AST should contain location information.';
+        if (options.path) {
+            errorMessage += ' path: ' + options.path;
+        }
+        throw new Error(errorMessage);
+    }
+}
+
+function ensureOptionPrerequisites (options) {
+    if (typeName(options.destructive) !== 'boolean') {
+        throw new Error('options.destructive should be a boolean value.');
+    }
+    if (typeName(options.patterns) !== 'Array') {
+        throw new Error('options.patterns should be an array.');
+    }
+}
+
+module.exports = Instrumentor;
+
+},{"./ast-deepcopy":15,"escallmatch":18,"escodegen":9,"espurify":22,"estraverse":28,"type-name":26}],18:[function(_dereq_,module,exports){
+/**
+ * escallmatch:
+ *   ECMAScript CallExpression matcher made from function/method signature
+ * 
+ * https://github.com/twada/escallmatch
+ *
+ * Copyright (c) 2014 Takuto Wada
+ * Licensed under the MIT license.
+ *   http://twada.mit-license.org/
+ */
+'use strict';
+/* jshint -W024 */
+
+var esprima = _dereq_('esprima'),
+    estraverse = _dereq_('estraverse'),
+    espurify = _dereq_('espurify'),
+    syntax = estraverse.Syntax,
+    hasOwn = Object.prototype.hasOwnProperty,
+    deepEqual = _dereq_('deep-equal'),
+    notCallExprMessage = 'Argument should be in the form of CallExpression',
+    duplicatedArgMessage = 'Duplicate argument name: ',
+    invalidFormMessage = 'Argument should be in the form of `name` or `[name]`';
+
+function createMatcher (signatureStr) {
+    var ast = extractExpressionFrom(esprima.parse(signatureStr));
+    return new Matcher(ast);
+}
+
+function Matcher (signatureAst) {
+    this.signatureAst = signatureAst;
+    this.signatureCalleeDepth = astDepth(signatureAst.callee);
+    this.numMaxArgs = this.signatureAst.arguments.length;
+    this.numMinArgs = this.signatureAst.arguments.filter(identifiers).length;
+}
+
+Matcher.prototype.test = function (currentNode) {
+    var calleeMatched = isCalleeMatched(this.signatureAst, this.signatureCalleeDepth, currentNode),
+        numArgs;
+    if (calleeMatched) {
+        numArgs = currentNode.arguments.length;
+        return this.numMinArgs <= numArgs && numArgs <= this.numMaxArgs;
+    }
+    return false;
+};
+
+Matcher.prototype.matchArgument = function (currentNode, parentNode) {
+    var indexOfCurrentArg, argNode;
+    if (isCalleeOfParent(currentNode, parentNode)) {
+        return null;
+    }
+    if (this.test(parentNode)) {
+        indexOfCurrentArg = parentNode.arguments.indexOf(currentNode);
+        argNode = this.signatureAst.arguments[indexOfCurrentArg];
+        return toArgumentSignature(argNode);
+    }
+    return null;
+};
+
+Matcher.prototype.calleeAst = function () {
+    return espurify(this.signatureAst.callee);
+};
+
+Matcher.prototype.argumentSignatures = function () {
+    return this.signatureAst.arguments.map(toArgumentSignature);
+};
+
+function toArgumentSignature (argSignatureNode) {
+    switch(argSignatureNode.type) {
+    case syntax.Identifier:
+        return {
+            name: argSignatureNode.name,
+            kind: 'mandatory'
         };
+    case syntax.ArrayExpression:
+        return {
+            name: argSignatureNode.elements[0].name,
+            kind: 'optional'
+        };
+    default:
+        return null;
     }
+}
 
-    function detectTargetMemberExpression (callee, objName, propName) {
-        if (callee.type !== syntax.MemberExpression || callee.computed !== false) {
+function isCalleeMatched(callSignature, signatureCalleeDepth, node) {
+    if (!isCallExpression(node)) {
+        return false;
+    }
+    if (!isSameAstDepth(node.callee, signatureCalleeDepth)) {
+        return false;
+    }
+    return deepEqual(espurify(callSignature.callee), espurify(node.callee));
+}
+
+function isSameAstDepth (ast, depth) {
+    var currentDepth = 0;
+    estraverse.traverse(ast, {
+        enter: function (currentNode, parentNode) {
+            var path = this.path(),
+                pathDepth = path ? path.length : 0;
+            if (currentDepth < pathDepth) {
+                currentDepth = pathDepth;
+            }
+            if (depth < currentDepth) {
+                this.break();
+            }
+        }
+    });
+    return (depth === currentDepth);
+}
+
+function astDepth (ast) {
+    var maxDepth = 0;
+    estraverse.traverse(ast, {
+        enter: function (currentNode, parentNode) {
+            var path = this.path(),
+                pathDepth = path ? path.length : 0;
+            if (maxDepth < pathDepth) {
+                maxDepth = pathDepth;
+            }
+        }
+    });
+    return maxDepth;
+}
+
+function isCallExpression (node) {
+    return node && node.type === syntax.CallExpression;
+}
+
+function isCalleeOfParent(currentNode, parentNode) {
+    return parentNode && currentNode &&
+        parentNode.type === syntax.CallExpression &&
+        parentNode.callee === currentNode;
+}
+
+function identifiers (node) {
+    return node.type === syntax.Identifier;
+}
+
+function validateApiExpression (callExpression) {
+    if (callExpression.type !== syntax.CallExpression) {
+        throw new Error(notCallExprMessage);
+    }
+    var names = {};
+    callExpression.arguments.forEach(function (arg) {
+        var name = validateArg(arg);
+        if (hasOwn.call(names, name)) {
+            throw new Error(duplicatedArgMessage + name);
+        } else {
+            names[name] = name;
+        }
+    });
+}
+
+function validateArg (arg) {
+    var inner;
+    switch(arg.type) {
+    case syntax.Identifier:
+        return arg.name;
+    case syntax.ArrayExpression:
+        if (arg.elements.length !== 1) {
+            throw new Error(invalidFormMessage);
+        }
+        inner = arg.elements[0];
+        if (inner.type !== syntax.Identifier) {
+            throw new Error(invalidFormMessage);
+        }
+        return inner.name;
+    default:
+        throw new Error(invalidFormMessage);
+    }
+}
+
+function extractExpressionFrom (tree) {
+    var statement, expression;
+    statement = tree.body[0];
+    if (statement.type !== syntax.ExpressionStatement) {
+        throw new Error(notCallExprMessage);
+    }
+    expression = statement.expression;
+    validateApiExpression(expression);
+    return expression;
+}
+
+module.exports = createMatcher;
+
+},{"deep-equal":19,"esprima":27,"espurify":22,"estraverse":28}],19:[function(_dereq_,module,exports){
+var pSlice = Array.prototype.slice;
+var objectKeys = _dereq_('./lib/keys.js');
+var isArguments = _dereq_('./lib/is_arguments.js');
+
+var deepEqual = module.exports = function (actual, expected, opts) {
+  if (!opts) opts = {};
+  // 7.1. All identical values are equivalent, as determined by ===.
+  if (actual === expected) {
+    return true;
+
+  } else if (actual instanceof Date && expected instanceof Date) {
+    return actual.getTime() === expected.getTime();
+
+  // 7.3. Other pairs that do not both pass typeof value == 'object',
+  // equivalence is determined by ==.
+  } else if (typeof actual != 'object' && typeof expected != 'object') {
+    return opts.strict ? actual === expected : actual == expected;
+
+  // 7.4. For all other Object pairs, including Array objects, equivalence is
+  // determined by having the same number of owned properties (as verified
+  // with Object.prototype.hasOwnProperty.call), the same set of keys
+  // (although not necessarily the same order), equivalent values for every
+  // corresponding key, and an identical 'prototype' property. Note: this
+  // accounts for both named and indexed properties on Arrays.
+  } else {
+    return objEquiv(actual, expected, opts);
+  }
+}
+
+function isUndefinedOrNull(value) {
+  return value === null || value === undefined;
+}
+
+function isBuffer (x) {
+  if (!x || typeof x !== 'object' || typeof x.length !== 'number') return false;
+  if (typeof x.copy !== 'function' || typeof x.slice !== 'function') {
+    return false;
+  }
+  if (x.length > 0 && typeof x[0] !== 'number') return false;
+  return true;
+}
+
+function objEquiv(a, b, opts) {
+  var i, key;
+  if (isUndefinedOrNull(a) || isUndefinedOrNull(b))
+    return false;
+  // an identical 'prototype' property.
+  if (a.prototype !== b.prototype) return false;
+  //~~~I've managed to break Object.keys through screwy arguments passing.
+  //   Converting to array solves the problem.
+  if (isArguments(a)) {
+    if (!isArguments(b)) {
+      return false;
+    }
+    a = pSlice.call(a);
+    b = pSlice.call(b);
+    return deepEqual(a, b, opts);
+  }
+  if (isBuffer(a)) {
+    if (!isBuffer(b)) {
+      return false;
+    }
+    if (a.length !== b.length) return false;
+    for (i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+  try {
+    var ka = objectKeys(a),
+        kb = objectKeys(b);
+  } catch (e) {//happens when one is a string literal and the other isn't
+    return false;
+  }
+  // having the same number of owned properties (keys incorporates
+  // hasOwnProperty)
+  if (ka.length != kb.length)
+    return false;
+  //the same set of keys (although not necessarily the same order),
+  ka.sort();
+  kb.sort();
+  //~~~cheap key test
+  for (i = ka.length - 1; i >= 0; i--) {
+    if (ka[i] != kb[i])
+      return false;
+  }
+  //equivalent values for every corresponding key, and
+  //~~~possibly expensive deep test
+  for (i = ka.length - 1; i >= 0; i--) {
+    key = ka[i];
+    if (!deepEqual(a[key], b[key], opts)) return false;
+  }
+  return true;
+}
+
+},{"./lib/is_arguments.js":20,"./lib/keys.js":21}],20:[function(_dereq_,module,exports){
+var supportsArgumentsClass = (function(){
+  return Object.prototype.toString.call(arguments)
+})() == '[object Arguments]';
+
+exports = module.exports = supportsArgumentsClass ? supported : unsupported;
+
+exports.supported = supported;
+function supported(object) {
+  return Object.prototype.toString.call(object) == '[object Arguments]';
+};
+
+exports.unsupported = unsupported;
+function unsupported(object){
+  return object &&
+    typeof object == 'object' &&
+    typeof object.length == 'number' &&
+    Object.prototype.hasOwnProperty.call(object, 'callee') &&
+    !Object.prototype.propertyIsEnumerable.call(object, 'callee') ||
+    false;
+};
+
+},{}],21:[function(_dereq_,module,exports){
+exports = module.exports = typeof Object.keys === 'function'
+  ? Object.keys : shim;
+
+exports.shim = shim;
+function shim (obj) {
+  var keys = [];
+  for (var key in obj) keys.push(key);
+  return keys;
+}
+
+},{}],22:[function(_dereq_,module,exports){
+/**
+ * espurify - Clone new AST without extra properties
+ * 
+ * https://github.com/twada/espurify
+ *
+ * Copyright (c) 2014 Takuto Wada
+ * Licensed under the MIT license.
+ *   http://twada.mit-license.org/
+ */
+'use strict';
+
+var traverse = _dereq_('traverse'),
+    deepCopy = _dereq_('./lib/ast-deepcopy'),
+    astProps = _dereq_('./lib/ast-properties'),
+    hasOwn = Object.prototype.hasOwnProperty;
+
+function espurify (node) {
+    var result = deepCopy(node);
+    traverse(result).forEach(function (x) {
+        if (this.parent &&
+            this.parent.node &&
+            this.parent.node.type &&
+            isSupportedNodeType(this.parent.node.type) &&
+            !isSupportedKey(this.parent.node.type, this.key))
+        {
+            this.remove(true);
+        }
+    });
+    return result;
+}
+
+function isSupportedNodeType (type) {
+    return hasOwn.call(astProps, type);
+}
+
+function isSupportedKey (type, key) {
+    return astProps[type].indexOf(key) !== -1;
+}
+
+module.exports = espurify;
+
+},{"./lib/ast-deepcopy":23,"./lib/ast-properties":24,"traverse":25}],23:[function(_dereq_,module,exports){
+module.exports=_dereq_(15)
+},{}],24:[function(_dereq_,module,exports){
+module.exports = {
+    AssignmentExpression: ['type', 'operator', 'left', 'right'],
+    ArrayExpression: ['type', 'elements'],
+    ArrayPattern: ['type', 'elements'],
+    // ArrowFunctionExpression: ['type', 'params', 'defaults', 'rest', 'body', 'generator', 'expression'],
+    BlockStatement: ['type', 'body'],
+    BinaryExpression: ['type', 'operator', 'left', 'right'],
+    BreakStatement: ['type', 'label'],
+    CallExpression: ['type', 'callee', 'arguments'],
+    CatchClause: ['type', 'param', 'guard', 'body'],
+    // ClassBody: ['type', 'body'],
+    // ClassDeclaration: ['type', 'id', 'body', 'superClass'],
+    // ClassExpression: ['type', 'id', 'body', 'superClass'],
+    ConditionalExpression: ['type', 'test', 'consequent', 'alternate'],
+    ContinueStatement: ['type', 'label'],
+    DebuggerStatement: ['type'],
+    // DirectiveStatement: ['type'],
+    DoWhileStatement: ['type', 'body', 'test'],
+    EmptyStatement: ['type'],
+    ExpressionStatement: ['type', 'expression'],
+    ForStatement: ['type', 'init', 'test', 'update', 'body'],
+    ForInStatement: ['type', 'left', 'right', 'body', 'each'],
+    FunctionDeclaration: ['type', 'id', 'params', 'defaults', 'rest', 'body', 'generator', 'expression'],
+    FunctionExpression: ['type', 'id', 'params', 'defaults', 'rest', 'body', 'generator', 'expression'],
+    Identifier: ['type', 'name'],
+    IfStatement: ['type', 'test', 'consequent', 'alternate'],
+    Literal: ['type', 'value'],
+    LabeledStatement: ['type', 'label', 'body'],
+    LogicalExpression: ['type', 'operator', 'left', 'right'],
+    MemberExpression: ['type', 'object', 'property', 'computed'],
+    // MethodDefinition: ['type', 'key', 'value'],
+    NewExpression: ['type', 'callee', 'arguments'],
+    ObjectExpression: ['type', 'properties'],
+    ObjectPattern: ['type', 'properties'],
+    Program: ['type', 'body'],
+    Property: ['type', 'key', 'value', 'kind'],
+    ReturnStatement: ['type', 'argument'],
+    SequenceExpression: ['type', 'expressions'],
+    SwitchStatement: ['type', 'discriminant', 'cases', 'lexical'],
+    SwitchCase: ['type', 'test', 'consequent'],
+    ThisExpression: ['type'],
+    ThrowStatement: ['type', 'argument'],
+    TryStatement: ['type', 'block', 'handlers', 'handler', 'guardedHandlers', 'finalizer'],
+    UnaryExpression: ['type', 'operator', 'prefix', 'argument'],
+    UpdateExpression: ['type', 'operator', 'argument', 'prefix'],
+    VariableDeclaration: ['type', 'declarations', 'kind'],
+    VariableDeclarator: ['type', 'id', 'init'],
+    WhileStatement: ['type', 'test', 'body'],
+    WithStatement: ['type', 'object', 'body'],
+    YieldExpression: ['type', 'argument']
+};
+
+},{}],25:[function(_dereq_,module,exports){
+var traverse = module.exports = function (obj) {
+    return new Traverse(obj);
+};
+
+function Traverse (obj) {
+    this.value = obj;
+}
+
+Traverse.prototype.get = function (ps) {
+    var node = this.value;
+    for (var i = 0; i < ps.length; i ++) {
+        var key = ps[i];
+        if (!node || !hasOwnProperty.call(node, key)) {
+            node = undefined;
+            break;
+        }
+        node = node[key];
+    }
+    return node;
+};
+
+Traverse.prototype.has = function (ps) {
+    var node = this.value;
+    for (var i = 0; i < ps.length; i ++) {
+        var key = ps[i];
+        if (!node || !hasOwnProperty.call(node, key)) {
             return false;
         }
-        var obj = callee.object,
-            prop = callee.property;
-        return ((obj.type === syntax.Identifier && obj.name === objName) && (prop.type === syntax.Identifier && prop.name === propName));
+        node = node[key];
     }
+    return true;
+};
 
-    function numberOfTargetArguments (callee, options) {
-        if (isSingleArgumentAssert(callee, options)) {
-            return 1;
+Traverse.prototype.set = function (ps, value) {
+    var node = this.value;
+    for (var i = 0; i < ps.length - 1; i ++) {
+        var key = ps[i];
+        if (!hasOwnProperty.call(node, key)) node[key] = {};
+        node = node[key];
+    }
+    node[ps[i]] = value;
+    return value;
+};
+
+Traverse.prototype.map = function (cb) {
+    return walk(this.value, cb, true);
+};
+
+Traverse.prototype.forEach = function (cb) {
+    this.value = walk(this.value, cb, false);
+    return this.value;
+};
+
+Traverse.prototype.reduce = function (cb, init) {
+    var skip = arguments.length === 1;
+    var acc = skip ? this.value : init;
+    this.forEach(function (x) {
+        if (!this.isRoot || !skip) {
+            acc = cb.call(this, acc, x);
         }
-        if (isTwoArgumentsAssert(callee, options)) {
-            return 2;
-        }
-        return 0;
-    }
+    });
+    return acc;
+};
 
-    function isSingleArgumentAssert (callee, options) {
-        return isAssertFunctionCall(callee, options) || isAssertMethodCall(callee, options);
-    }
+Traverse.prototype.paths = function () {
+    var acc = [];
+    this.forEach(function (x) {
+        acc.push(this.path); 
+    });
+    return acc;
+};
 
-    function isTwoArgumentsAssert (callee, options) {
-        return options.targetMethods.twoArgs.some(function (name) {
-            return detectTargetMemberExpression(callee, options.powerAssertVariableName, name);
-        });
-    }
+Traverse.prototype.nodes = function () {
+    var acc = [];
+    this.forEach(function (x) {
+        acc.push(this.node);
+    });
+    return acc;
+};
 
-    function isAssertMethodCall (callee, options) {
-        return options.targetMethods.oneArg.some(function (name) {
-            return detectTargetMemberExpression(callee, options.powerAssertVariableName, name);
-        });
-    }
-
-    function isAssertFunctionCall (callee, options) {
-        return (callee.type === syntax.Identifier && callee.name === options.powerAssertVariableName);
-    }
-
-    function isSupportedNodeType (node) {
-        return supportedNodeTypes.indexOf(node.type) !== -1;
-    }
-
-    function ensureAstPrerequisites (ast, options) {
-        var errorMessage;
-        if (typeof ast.loc === 'undefined') {
-            errorMessage = 'JavaScript AST should contain location information.';
-            if (options.path) {
-                errorMessage += ' path: ' + options.path;
+Traverse.prototype.clone = function () {
+    var parents = [], nodes = [];
+    
+    return (function clone (src) {
+        for (var i = 0; i < parents.length; i++) {
+            if (parents[i] === src) {
+                return nodes[i];
             }
-            throw new Error(errorMessage);
         }
-    }
-
-    function ensureOptionPrerequisites (options) {
-        [
-            'destructive',
-            'powerAssertVariableName',
-            'targetMethods'
-        ].forEach(function (propName) {
-            ensureOptionExistence(options, propName);
-        });
-
-        if (typeof options.targetMethods.oneArg === 'undefined') {
-            throw new Error('options.targetMethods.oneArg should be specified.');
+        
+        if (typeof src === 'object' && src !== null) {
+            var dst = copy(src);
+            
+            parents.push(src);
+            nodes.push(dst);
+            
+            forEach(objectKeys(src), function (key) {
+                dst[key] = clone(src[key]);
+            });
+            
+            parents.pop();
+            nodes.pop();
+            return dst;
         }
-        if (typeof options.targetMethods.twoArgs === 'undefined') {
-            throw new Error('options.targetMethods.twoArgs should be specified.');
+        else {
+            return src;
         }
-    }
+    })(this.value);
+};
 
-    function ensureOptionExistence (options, propName) {
-        if (typeof options[propName] === 'undefined') {
-            throw new Error('options.' + propName + ' should be specified.');
-        }
-    }
-
-
-    // borrowed from esmangle
-    deepCopy = (function () {
-        var deepCopyInternal,
-            isArray = Array.isArray;
-        if (!isArray) {
-            isArray = function isArray(array) {
-                return Object.prototype.toString.call(array) === '[object Array]';
-            };
-        }
-        deepCopyInternal = function (obj, result) {
-            var key, val;
-            for (key in obj) {
-                if (key.lastIndexOf('__', 0) === 0) {
-                    continue;
+function walk (root, cb, immutable) {
+    var path = [];
+    var parents = [];
+    var alive = true;
+    
+    return (function walker (node_) {
+        var node = immutable ? copy(node_) : node_;
+        var modifiers = {};
+        
+        var keepGoing = true;
+        
+        var state = {
+            node : node,
+            node_ : node_,
+            path : [].concat(path),
+            parent : parents[parents.length - 1],
+            parents : parents,
+            key : path.slice(-1)[0],
+            isRoot : path.length === 0,
+            level : path.length,
+            circular : null,
+            update : function (x, stopHere) {
+                if (!state.isRoot) {
+                    state.parent.node[state.key] = x;
                 }
-                if (obj.hasOwnProperty(key)) {
-                    val = obj[key];
-                    if (typeof val === 'object' && val !== null) {
-                        if (val instanceof RegExp) {
-                            val = new RegExp(val);
-                        } else {
-                            val = deepCopyInternal(val, isArray(val) ? [] : {});
-                        }
+                state.node = x;
+                if (stopHere) keepGoing = false;
+            },
+            'delete' : function (stopHere) {
+                delete state.parent.node[state.key];
+                if (stopHere) keepGoing = false;
+            },
+            remove : function (stopHere) {
+                if (isArray(state.parent.node)) {
+                    state.parent.node.splice(state.key, 1);
+                }
+                else {
+                    delete state.parent.node[state.key];
+                }
+                if (stopHere) keepGoing = false;
+            },
+            keys : null,
+            before : function (f) { modifiers.before = f },
+            after : function (f) { modifiers.after = f },
+            pre : function (f) { modifiers.pre = f },
+            post : function (f) { modifiers.post = f },
+            stop : function () { alive = false },
+            block : function () { keepGoing = false }
+        };
+        
+        if (!alive) return state;
+        
+        function updateState() {
+            if (typeof state.node === 'object' && state.node !== null) {
+                if (!state.keys || state.node_ !== state.node) {
+                    state.keys = objectKeys(state.node)
+                }
+                
+                state.isLeaf = state.keys.length == 0;
+                
+                for (var i = 0; i < parents.length; i++) {
+                    if (parents[i].node_ === node_) {
+                        state.circular = parents[i];
+                        break;
                     }
-                    result[key] = val;
                 }
             }
-            return result;
-        };
-        return function (obj) {
-            return deepCopyInternal(obj, isArray(obj) ? [] : {});
-        };
-    })();
-
-
-    // borrowed from qunit.js
-    function extend (a, b) {
-        var prop;
-        for (prop in b) {
-            if (b.hasOwnProperty(prop)) {
-                if (typeof b[prop] === 'undefined') {
-                    delete a[prop];
-                } else {
-                    a[prop] = b[prop];
-                }
+            else {
+                state.isLeaf = true;
+                state.keys = null;
             }
+            
+            state.notLeaf = !state.isLeaf;
+            state.notRoot = !state.isRoot;
         }
-        return a;
+        
+        updateState();
+        
+        // use return values to update if defined
+        var ret = cb.call(state, state.node);
+        if (ret !== undefined && state.update) state.update(ret);
+        
+        if (modifiers.before) modifiers.before.call(state, state.node);
+        
+        if (!keepGoing) return state;
+        
+        if (typeof state.node == 'object'
+        && state.node !== null && !state.circular) {
+            parents.push(state);
+            
+            updateState();
+            
+            forEach(state.keys, function (key, i) {
+                path.push(key);
+                
+                if (modifiers.pre) modifiers.pre.call(state, state.node[key], key);
+                
+                var child = walker(state.node[key]);
+                if (immutable && hasOwnProperty.call(state.node, key)) {
+                    state.node[key] = child.node;
+                }
+                
+                child.isLast = i == state.keys.length - 1;
+                child.isFirst = i == 0;
+                
+                if (modifiers.post) modifiers.post.call(state, child);
+                
+                path.pop();
+            });
+            parents.pop();
+        }
+        
+        if (modifiers.after) modifiers.after.call(state, state.node);
+        
+        return state;
+    })(root).node;
+}
+
+function copy (src) {
+    if (typeof src === 'object' && src !== null) {
+        var dst;
+        
+        if (isArray(src)) {
+            dst = [];
+        }
+        else if (isDate(src)) {
+            dst = new Date(src.getTime ? src.getTime() : src);
+        }
+        else if (isRegExp(src)) {
+            dst = new RegExp(src);
+        }
+        else if (isError(src)) {
+            dst = { message: src.message };
+        }
+        else if (isBoolean(src)) {
+            dst = new Boolean(src);
+        }
+        else if (isNumber(src)) {
+            dst = new Number(src);
+        }
+        else if (isString(src)) {
+            dst = new String(src);
+        }
+        else if (Object.create && Object.getPrototypeOf) {
+            dst = Object.create(Object.getPrototypeOf(src));
+        }
+        else if (src.constructor === Object) {
+            dst = {};
+        }
+        else {
+            var proto =
+                (src.constructor && src.constructor.prototype)
+                || src.__proto__
+                || {}
+            ;
+            var T = function () {};
+            T.prototype = proto;
+            dst = new T;
+        }
+        
+        forEach(objectKeys(src), function (key) {
+            dst[key] = src[key];
+        });
+        return dst;
     }
+    else return src;
+}
 
+var objectKeys = Object.keys || function keys (obj) {
+    var res = [];
+    for (var key in obj) res.push(key)
+    return res;
+};
 
-    // using returnExports UMD pattern with substack pattern
-    espower.deepCopy = deepCopy;
-    espower.defaultOptions = defaultOptions;
-    return espower;
-}));
+function toS (obj) { return Object.prototype.toString.call(obj) }
+function isDate (obj) { return toS(obj) === '[object Date]' }
+function isRegExp (obj) { return toS(obj) === '[object RegExp]' }
+function isError (obj) { return toS(obj) === '[object Error]' }
+function isBoolean (obj) { return toS(obj) === '[object Boolean]' }
+function isNumber (obj) { return toS(obj) === '[object Number]' }
+function isString (obj) { return toS(obj) === '[object String]' }
 
-},{"escodegen":9,"estraverse":16}],16:[function(_dereq_,module,exports){
-module.exports=_dereq_(10)
-},{}],17:[function(_dereq_,module,exports){
+var isArray = Array.isArray || function isArray (xs) {
+    return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+var forEach = function (xs, fn) {
+    if (xs.forEach) return xs.forEach(fn)
+    else for (var i = 0; i < xs.length; i++) {
+        fn(xs[i], i, xs);
+    }
+};
+
+forEach(objectKeys(Traverse.prototype), function (key) {
+    traverse[key] = function (obj) {
+        var args = [].slice.call(arguments, 1);
+        var t = new Traverse(obj);
+        return t[key].apply(t, args);
+    };
+});
+
+var hasOwnProperty = Object.hasOwnProperty || function (obj, key) {
+    return key in obj;
+};
+
+},{}],26:[function(_dereq_,module,exports){
+/**
+ * type-name - Just a reasonable typeof
+ * 
+ * https://github.com/twada/type-name
+ *
+ * Copyright (c) 2014 Takuto Wada
+ * Licensed under the MIT license.
+ *   http://twada.mit-license.org/
+ */
+'use strict';
+
+var toStr = Object.prototype.toString;
+
+function funcName (f) {
+    return f.name ? f.name : /^\s*function\s*([^\(]*)/im.exec(f.toString())[1];
+}
+
+function ctorName (obj) {
+    var strName = toStr.call(obj).slice(8, -1);
+    if (strName === 'Object') {
+        return funcName(obj.constructor);
+    }
+    return strName;
+}
+
+function typeName (val) {
+    var type;
+    if (val === null) {
+        return 'null';
+    }
+    type = typeof(val);
+    if (type === 'object') {
+        return ctorName(val);
+    }
+    return type;
+}
+
+module.exports = typeName;
+
+},{}],27:[function(_dereq_,module,exports){
 /*
   Copyright (C) 2013 Ariya Hidayat <ariya.hidayat@gmail.com>
   Copyright (C) 2013 Thaddee Tyl <thaddee.tyl@gmail.com>
@@ -9416,7 +9433,698 @@ parseStatement: true, parseSourceElement: true */
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],18:[function(_dereq_,module,exports){
+},{}],28:[function(_dereq_,module,exports){
+/*
+  Copyright (C) 2012-2013 Yusuke Suzuki <utatane.tea@gmail.com>
+  Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+/*jslint vars:false, bitwise:true*/
+/*jshint indent:4*/
+/*global exports:true, define:true*/
+(function (root, factory) {
+    'use strict';
+
+    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
+    // and plain browser loading,
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        factory((root.estraverse = {}));
+    }
+}(this, function (exports) {
+    'use strict';
+
+    var Syntax,
+        isArray,
+        VisitorOption,
+        VisitorKeys,
+        BREAK,
+        SKIP;
+
+    Syntax = {
+        AssignmentExpression: 'AssignmentExpression',
+        ArrayExpression: 'ArrayExpression',
+        ArrayPattern: 'ArrayPattern',
+        ArrowFunctionExpression: 'ArrowFunctionExpression',
+        BlockStatement: 'BlockStatement',
+        BinaryExpression: 'BinaryExpression',
+        BreakStatement: 'BreakStatement',
+        CallExpression: 'CallExpression',
+        CatchClause: 'CatchClause',
+        ClassBody: 'ClassBody',
+        ClassDeclaration: 'ClassDeclaration',
+        ClassExpression: 'ClassExpression',
+        ConditionalExpression: 'ConditionalExpression',
+        ContinueStatement: 'ContinueStatement',
+        DebuggerStatement: 'DebuggerStatement',
+        DirectiveStatement: 'DirectiveStatement',
+        DoWhileStatement: 'DoWhileStatement',
+        EmptyStatement: 'EmptyStatement',
+        ExpressionStatement: 'ExpressionStatement',
+        ForStatement: 'ForStatement',
+        ForInStatement: 'ForInStatement',
+        FunctionDeclaration: 'FunctionDeclaration',
+        FunctionExpression: 'FunctionExpression',
+        Identifier: 'Identifier',
+        IfStatement: 'IfStatement',
+        Literal: 'Literal',
+        LabeledStatement: 'LabeledStatement',
+        LogicalExpression: 'LogicalExpression',
+        MemberExpression: 'MemberExpression',
+        MethodDefinition: 'MethodDefinition',
+        NewExpression: 'NewExpression',
+        ObjectExpression: 'ObjectExpression',
+        ObjectPattern: 'ObjectPattern',
+        Program: 'Program',
+        Property: 'Property',
+        ReturnStatement: 'ReturnStatement',
+        SequenceExpression: 'SequenceExpression',
+        SwitchStatement: 'SwitchStatement',
+        SwitchCase: 'SwitchCase',
+        ThisExpression: 'ThisExpression',
+        ThrowStatement: 'ThrowStatement',
+        TryStatement: 'TryStatement',
+        UnaryExpression: 'UnaryExpression',
+        UpdateExpression: 'UpdateExpression',
+        VariableDeclaration: 'VariableDeclaration',
+        VariableDeclarator: 'VariableDeclarator',
+        WhileStatement: 'WhileStatement',
+        WithStatement: 'WithStatement',
+        YieldExpression: 'YieldExpression'
+    };
+
+    function ignoreJSHintError() { }
+
+    isArray = Array.isArray;
+    if (!isArray) {
+        isArray = function isArray(array) {
+            return Object.prototype.toString.call(array) === '[object Array]';
+        };
+    }
+
+    function deepCopy(obj) {
+        var ret = {}, key, val;
+        for (key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                val = obj[key];
+                if (typeof val === 'object' && val !== null) {
+                    ret[key] = deepCopy(val);
+                } else {
+                    ret[key] = val;
+                }
+            }
+        }
+        return ret;
+    }
+
+    function shallowCopy(obj) {
+        var ret = {}, key;
+        for (key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                ret[key] = obj[key];
+            }
+        }
+        return ret;
+    }
+    ignoreJSHintError(shallowCopy);
+
+    // based on LLVM libc++ upper_bound / lower_bound
+    // MIT License
+
+    function upperBound(array, func) {
+        var diff, len, i, current;
+
+        len = array.length;
+        i = 0;
+
+        while (len) {
+            diff = len >>> 1;
+            current = i + diff;
+            if (func(array[current])) {
+                len = diff;
+            } else {
+                i = current + 1;
+                len -= diff + 1;
+            }
+        }
+        return i;
+    }
+
+    function lowerBound(array, func) {
+        var diff, len, i, current;
+
+        len = array.length;
+        i = 0;
+
+        while (len) {
+            diff = len >>> 1;
+            current = i + diff;
+            if (func(array[current])) {
+                i = current + 1;
+                len -= diff + 1;
+            } else {
+                len = diff;
+            }
+        }
+        return i;
+    }
+    ignoreJSHintError(lowerBound);
+
+    VisitorKeys = {
+        AssignmentExpression: ['left', 'right'],
+        ArrayExpression: ['elements'],
+        ArrayPattern: ['elements'],
+        ArrowFunctionExpression: ['params', 'defaults', 'rest', 'body'],
+        BlockStatement: ['body'],
+        BinaryExpression: ['left', 'right'],
+        BreakStatement: ['label'],
+        CallExpression: ['callee', 'arguments'],
+        CatchClause: ['param', 'body'],
+        ClassBody: ['body'],
+        ClassDeclaration: ['id', 'body', 'superClass'],
+        ClassExpression: ['id', 'body', 'superClass'],
+        ConditionalExpression: ['test', 'consequent', 'alternate'],
+        ContinueStatement: ['label'],
+        DebuggerStatement: [],
+        DirectiveStatement: [],
+        DoWhileStatement: ['body', 'test'],
+        EmptyStatement: [],
+        ExpressionStatement: ['expression'],
+        ForStatement: ['init', 'test', 'update', 'body'],
+        ForInStatement: ['left', 'right', 'body'],
+        ForOfStatement: ['left', 'right', 'body'],
+        FunctionDeclaration: ['id', 'params', 'defaults', 'rest', 'body'],
+        FunctionExpression: ['id', 'params', 'defaults', 'rest', 'body'],
+        Identifier: [],
+        IfStatement: ['test', 'consequent', 'alternate'],
+        Literal: [],
+        LabeledStatement: ['label', 'body'],
+        LogicalExpression: ['left', 'right'],
+        MemberExpression: ['object', 'property'],
+        MethodDefinition: ['key', 'value'],
+        NewExpression: ['callee', 'arguments'],
+        ObjectExpression: ['properties'],
+        ObjectPattern: ['properties'],
+        Program: ['body'],
+        Property: ['key', 'value'],
+        ReturnStatement: ['argument'],
+        SequenceExpression: ['expressions'],
+        SwitchStatement: ['discriminant', 'cases'],
+        SwitchCase: ['test', 'consequent'],
+        ThisExpression: [],
+        ThrowStatement: ['argument'],
+        TryStatement: ['block', 'handlers', 'handler', 'guardedHandlers', 'finalizer'],
+        UnaryExpression: ['argument'],
+        UpdateExpression: ['argument'],
+        VariableDeclaration: ['declarations'],
+        VariableDeclarator: ['id', 'init'],
+        WhileStatement: ['test', 'body'],
+        WithStatement: ['object', 'body'],
+        YieldExpression: ['argument']
+    };
+
+    // unique id
+    BREAK = {};
+    SKIP = {};
+
+    VisitorOption = {
+        Break: BREAK,
+        Skip: SKIP
+    };
+
+    function Reference(parent, key) {
+        this.parent = parent;
+        this.key = key;
+    }
+
+    Reference.prototype.replace = function replace(node) {
+        this.parent[this.key] = node;
+    };
+
+    function Element(node, path, wrap, ref) {
+        this.node = node;
+        this.path = path;
+        this.wrap = wrap;
+        this.ref = ref;
+    }
+
+    function Controller() { }
+
+    // API:
+    // return property path array from root to current node
+    Controller.prototype.path = function path() {
+        var i, iz, j, jz, result, element;
+
+        function addToPath(result, path) {
+            if (isArray(path)) {
+                for (j = 0, jz = path.length; j < jz; ++j) {
+                    result.push(path[j]);
+                }
+            } else {
+                result.push(path);
+            }
+        }
+
+        // root node
+        if (!this.__current.path) {
+            return null;
+        }
+
+        // first node is sentinel, second node is root element
+        result = [];
+        for (i = 2, iz = this.__leavelist.length; i < iz; ++i) {
+            element = this.__leavelist[i];
+            addToPath(result, element.path);
+        }
+        addToPath(result, this.__current.path);
+        return result;
+    };
+
+    // API:
+    // return array of parent elements
+    Controller.prototype.parents = function parents() {
+        var i, iz, result;
+
+        // first node is sentinel
+        result = [];
+        for (i = 1, iz = this.__leavelist.length; i < iz; ++i) {
+            result.push(this.__leavelist[i].node);
+        }
+
+        return result;
+    };
+
+    // API:
+    // return current node
+    Controller.prototype.current = function current() {
+        return this.__current.node;
+    };
+
+    Controller.prototype.__execute = function __execute(callback, element) {
+        var previous, result;
+
+        result = undefined;
+
+        previous  = this.__current;
+        this.__current = element;
+        this.__state = null;
+        if (callback) {
+            result = callback.call(this, element.node, this.__leavelist[this.__leavelist.length - 1].node);
+        }
+        this.__current = previous;
+
+        return result;
+    };
+
+    // API:
+    // notify control skip / break
+    Controller.prototype.notify = function notify(flag) {
+        this.__state = flag;
+    };
+
+    // API:
+    // skip child nodes of current node
+    Controller.prototype.skip = function () {
+        this.notify(SKIP);
+    };
+
+    // API:
+    // break traversals
+    Controller.prototype['break'] = function () {
+        this.notify(BREAK);
+    };
+
+    Controller.prototype.__initialize = function(root, visitor) {
+        this.visitor = visitor;
+        this.root = root;
+        this.__worklist = [];
+        this.__leavelist = [];
+        this.__current = null;
+        this.__state = null;
+    };
+
+    Controller.prototype.traverse = function traverse(root, visitor) {
+        var worklist,
+            leavelist,
+            element,
+            node,
+            nodeType,
+            ret,
+            key,
+            current,
+            current2,
+            candidates,
+            candidate,
+            sentinel;
+
+        this.__initialize(root, visitor);
+
+        sentinel = {};
+
+        // reference
+        worklist = this.__worklist;
+        leavelist = this.__leavelist;
+
+        // initialize
+        worklist.push(new Element(root, null, null, null));
+        leavelist.push(new Element(null, null, null, null));
+
+        while (worklist.length) {
+            element = worklist.pop();
+
+            if (element === sentinel) {
+                element = leavelist.pop();
+
+                ret = this.__execute(visitor.leave, element);
+
+                if (this.__state === BREAK || ret === BREAK) {
+                    return;
+                }
+                continue;
+            }
+
+            if (element.node) {
+
+                ret = this.__execute(visitor.enter, element);
+
+                if (this.__state === BREAK || ret === BREAK) {
+                    return;
+                }
+
+                worklist.push(sentinel);
+                leavelist.push(element);
+
+                if (this.__state === SKIP || ret === SKIP) {
+                    continue;
+                }
+
+                node = element.node;
+                nodeType = element.wrap || node.type;
+                candidates = VisitorKeys[nodeType];
+
+                current = candidates.length;
+                while ((current -= 1) >= 0) {
+                    key = candidates[current];
+                    candidate = node[key];
+                    if (!candidate) {
+                        continue;
+                    }
+
+                    if (!isArray(candidate)) {
+                        worklist.push(new Element(candidate, key, null, null));
+                        continue;
+                    }
+
+                    current2 = candidate.length;
+                    while ((current2 -= 1) >= 0) {
+                        if (!candidate[current2]) {
+                            continue;
+                        }
+                        if ((nodeType === Syntax.ObjectExpression || nodeType === Syntax.ObjectPattern) && 'properties' === candidates[current]) {
+                            element = new Element(candidate[current2], [key, current2], 'Property', null);
+                        } else {
+                            element = new Element(candidate[current2], [key, current2], null, null);
+                        }
+                        worklist.push(element);
+                    }
+                }
+            }
+        }
+    };
+
+    Controller.prototype.replace = function replace(root, visitor) {
+        var worklist,
+            leavelist,
+            node,
+            nodeType,
+            target,
+            element,
+            current,
+            current2,
+            candidates,
+            candidate,
+            sentinel,
+            outer,
+            key;
+
+        this.__initialize(root, visitor);
+
+        sentinel = {};
+
+        // reference
+        worklist = this.__worklist;
+        leavelist = this.__leavelist;
+
+        // initialize
+        outer = {
+            root: root
+        };
+        element = new Element(root, null, null, new Reference(outer, 'root'));
+        worklist.push(element);
+        leavelist.push(element);
+
+        while (worklist.length) {
+            element = worklist.pop();
+
+            if (element === sentinel) {
+                element = leavelist.pop();
+
+                target = this.__execute(visitor.leave, element);
+
+                // node may be replaced with null,
+                // so distinguish between undefined and null in this place
+                if (target !== undefined && target !== BREAK && target !== SKIP) {
+                    // replace
+                    element.ref.replace(target);
+                }
+
+                if (this.__state === BREAK || target === BREAK) {
+                    return outer.root;
+                }
+                continue;
+            }
+
+            target = this.__execute(visitor.enter, element);
+
+            // node may be replaced with null,
+            // so distinguish between undefined and null in this place
+            if (target !== undefined && target !== BREAK && target !== SKIP) {
+                // replace
+                element.ref.replace(target);
+                element.node = target;
+            }
+
+            if (this.__state === BREAK || target === BREAK) {
+                return outer.root;
+            }
+
+            // node may be null
+            node = element.node;
+            if (!node) {
+                continue;
+            }
+
+            worklist.push(sentinel);
+            leavelist.push(element);
+
+            if (this.__state === SKIP || target === SKIP) {
+                continue;
+            }
+
+            nodeType = element.wrap || node.type;
+            candidates = VisitorKeys[nodeType];
+
+            current = candidates.length;
+            while ((current -= 1) >= 0) {
+                key = candidates[current];
+                candidate = node[key];
+                if (!candidate) {
+                    continue;
+                }
+
+                if (!isArray(candidate)) {
+                    worklist.push(new Element(candidate, key, null, new Reference(node, key)));
+                    continue;
+                }
+
+                current2 = candidate.length;
+                while ((current2 -= 1) >= 0) {
+                    if (!candidate[current2]) {
+                        continue;
+                    }
+                    if (nodeType === Syntax.ObjectExpression && 'properties' === candidates[current]) {
+                        element = new Element(candidate[current2], [key, current2], 'Property', new Reference(candidate, current2));
+                    } else {
+                        element = new Element(candidate[current2], [key, current2], null, new Reference(candidate, current2));
+                    }
+                    worklist.push(element);
+                }
+            }
+        }
+
+        return outer.root;
+    };
+
+    function traverse(root, visitor) {
+        var controller = new Controller();
+        return controller.traverse(root, visitor);
+    }
+
+    function replace(root, visitor) {
+        var controller = new Controller();
+        return controller.replace(root, visitor);
+    }
+
+    function extendCommentRange(comment, tokens) {
+        var target;
+
+        target = upperBound(tokens, function search(token) {
+            return token.range[0] > comment.range[0];
+        });
+
+        comment.extendedRange = [comment.range[0], comment.range[1]];
+
+        if (target !== tokens.length) {
+            comment.extendedRange[1] = tokens[target].range[0];
+        }
+
+        target -= 1;
+        if (target >= 0) {
+            comment.extendedRange[0] = tokens[target].range[1];
+        }
+
+        return comment;
+    }
+
+    function attachComments(tree, providedComments, tokens) {
+        // At first, we should calculate extended comment ranges.
+        var comments = [], comment, len, i, cursor;
+
+        if (!tree.range) {
+            throw new Error('attachComments needs range information');
+        }
+
+        // tokens array is empty, we attach comments to tree as 'leadingComments'
+        if (!tokens.length) {
+            if (providedComments.length) {
+                for (i = 0, len = providedComments.length; i < len; i += 1) {
+                    comment = deepCopy(providedComments[i]);
+                    comment.extendedRange = [0, tree.range[0]];
+                    comments.push(comment);
+                }
+                tree.leadingComments = comments;
+            }
+            return tree;
+        }
+
+        for (i = 0, len = providedComments.length; i < len; i += 1) {
+            comments.push(extendCommentRange(deepCopy(providedComments[i]), tokens));
+        }
+
+        // This is based on John Freeman's implementation.
+        cursor = 0;
+        traverse(tree, {
+            enter: function (node) {
+                var comment;
+
+                while (cursor < comments.length) {
+                    comment = comments[cursor];
+                    if (comment.extendedRange[1] > node.range[0]) {
+                        break;
+                    }
+
+                    if (comment.extendedRange[1] === node.range[0]) {
+                        if (!node.leadingComments) {
+                            node.leadingComments = [];
+                        }
+                        node.leadingComments.push(comment);
+                        comments.splice(cursor, 1);
+                    } else {
+                        cursor += 1;
+                    }
+                }
+
+                // already out of owned node
+                if (cursor === comments.length) {
+                    return VisitorOption.Break;
+                }
+
+                if (comments[cursor].extendedRange[0] > node.range[1]) {
+                    return VisitorOption.Skip;
+                }
+            }
+        });
+
+        cursor = 0;
+        traverse(tree, {
+            leave: function (node) {
+                var comment;
+
+                while (cursor < comments.length) {
+                    comment = comments[cursor];
+                    if (node.range[1] < comment.extendedRange[0]) {
+                        break;
+                    }
+
+                    if (node.range[1] === comment.extendedRange[0]) {
+                        if (!node.trailingComments) {
+                            node.trailingComments = [];
+                        }
+                        node.trailingComments.push(comment);
+                        comments.splice(cursor, 1);
+                    } else {
+                        cursor += 1;
+                    }
+                }
+
+                // already out of owned node
+                if (cursor === comments.length) {
+                    return VisitorOption.Break;
+                }
+
+                if (comments[cursor].extendedRange[0] > node.range[1]) {
+                    return VisitorOption.Skip;
+                }
+            }
+        });
+
+        return tree;
+    }
+
+    exports.version = '1.5.1-dev';
+    exports.Syntax = Syntax;
+    exports.traverse = traverse;
+    exports.replace = replace;
+    exports.attachComments = attachComments;
+    exports.VisitorKeys = VisitorKeys;
+    exports.VisitorOption = VisitorOption;
+    exports.Controller = Controller;
+}));
+/* vim: set sw=4 ts=4 et tw=80 : */
+
+},{}],29:[function(_dereq_,module,exports){
 /*
  * Copyright 2009-2011 Mozilla Foundation and contributors
  * Licensed under the New BSD license. See LICENSE.txt or:
@@ -9426,7 +10134,7 @@ exports.SourceMapGenerator = _dereq_('./source-map/source-map-generator').Source
 exports.SourceMapConsumer = _dereq_('./source-map/source-map-consumer').SourceMapConsumer;
 exports.SourceNode = _dereq_('./source-map/source-node').SourceNode;
 
-},{"./source-map/source-map-consumer":23,"./source-map/source-map-generator":24,"./source-map/source-node":25}],19:[function(_dereq_,module,exports){
+},{"./source-map/source-map-consumer":34,"./source-map/source-map-generator":35,"./source-map/source-node":36}],30:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -9525,7 +10233,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./util":26,"amdefine":27}],20:[function(_dereq_,module,exports){
+},{"./util":37,"amdefine":38}],31:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -9671,7 +10379,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./base64":21,"amdefine":27}],21:[function(_dereq_,module,exports){
+},{"./base64":32,"amdefine":38}],32:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -9715,7 +10423,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"amdefine":27}],22:[function(_dereq_,module,exports){
+},{"amdefine":38}],33:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -9798,7 +10506,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"amdefine":27}],23:[function(_dereq_,module,exports){
+},{"amdefine":38}],34:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -10278,7 +10986,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./array-set":19,"./base64-vlq":20,"./binary-search":22,"./util":26,"amdefine":27}],24:[function(_dereq_,module,exports){
+},{"./array-set":30,"./base64-vlq":31,"./binary-search":33,"./util":37,"amdefine":38}],35:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -10683,7 +11391,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./array-set":19,"./base64-vlq":20,"./util":26,"amdefine":27}],25:[function(_dereq_,module,exports){
+},{"./array-set":30,"./base64-vlq":31,"./util":37,"amdefine":38}],36:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -11093,7 +11801,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./source-map-generator":24,"./util":26,"amdefine":27}],26:[function(_dereq_,module,exports){
+},{"./source-map-generator":35,"./util":37,"amdefine":38}],37:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -11414,7 +12122,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"amdefine":27}],27:[function(_dereq_,module,exports){
+},{"amdefine":38}],38:[function(_dereq_,module,exports){
 (function (process,__filename){
 /** vim: et:ts=4:sw=4:sts=4
  * @license amdefine 0.1.0 Copyright (c) 2011, The Dojo Foundation All Rights Reserved.
@@ -11717,7 +12425,7 @@ function amdefine(module, requireFn) {
 module.exports = amdefine;
 
 }).call(this,_dereq_('_process'),"/node_modules/source-map/node_modules/amdefine/amdefine.js")
-},{"_process":7,"path":6}],28:[function(_dereq_,module,exports){
+},{"_process":7,"path":6}],39:[function(_dereq_,module,exports){
 module.exports = extend
 
 function extend() {
