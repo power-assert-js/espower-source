@@ -19,6 +19,11 @@ Please note that `espower-source` is a beta version product. Pull-requests, issu
 See [power-assert](http://github.com/twada/power-assert) project for more documentation.
 
 
+CHANGELOG
+---------------------------------------
+See [CHANGELOG](https://github.com/twada/espower-source/blob/master/CHANGELOG.md)
+
+
 API
 ---------------------------------------
 
