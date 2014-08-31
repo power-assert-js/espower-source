@@ -147,3 +147,121 @@ function testSourceMapCommonAttributes() {
         assert(this.map.file === undefined);
     });
 }
+
+
+describe('incoming code with SourceMap comment', function() {
+    beforeEach(function () {
+        this.path = 'test/fixtures/with-sourcemap.js';
+        this.input = fs.readFileSync('test/fixtures/with-sourcemap.js', 'utf8'),
+        this.output = espowerSource(this.input, this.path);
+        this.map = convert.fromSource(this.output).toObject();
+        this.expected = fs.readFileSync('test/expected/with-sourcemap.js', 'utf8');
+    });
+
+    it('should return a string', function() {
+        assert.equal(typeof this.output, 'string');
+    });
+
+    it('should transform source', function() {
+        assert.equal(this.output, this.expected);
+    });
+
+    describe('generated sourceMap', function() {
+        it('version', function () {
+            assert.equal(this.map.version, 3);
+        });
+        it('sources', function () {
+            assert.deepEqual(this.map.sources, ['/absolute/path/to/coffee_script_test.coffee']);
+        });
+        it('sourceRoot', function () {
+            assert(this.map.sourceRoot === undefined);
+        });
+        it('sourcesContent', function () {
+            assert.deepEqual(this.map.sourcesContent, [
+                [
+                    'assert = require \'power-assert\'',
+                    '',
+                    'class Person',
+                    '  constructor: (name, age) ->',
+                    '    @name = name',
+                    '    @age = age',
+                    '',
+                    'describe "various types", ->',
+                    '  beforeEach ->',
+                    '    @types = [',
+                    '      "string"',
+                    '      98.6',
+                    '      true',
+                    '      false',
+                    '      null',
+                    '      `undefined`',
+                    '      [',
+                    '        "nested"',
+                    '        "array"',
+                    '      ]',
+                    '      {',
+                    '        object: true',
+                    '      }',
+                    '      NaN',
+                    '      Infinity',
+                    '      /^not/',
+                    '      new Person("alice", 3)',
+                    '    ]',
+                    '',
+                    '  it "demo", ->',
+                    '    index = @types.length - 1',
+                    '    bob = new Person("bob", 5)',
+                    '    assert @types[index].name is bob.name',
+                    ''
+                ].join('\n')
+            ]);
+        });
+        it('file', function () {
+            assert(this.map.file === undefined);
+        });
+        it('names', function () {
+            assert.deepEqual(this.map.names, []);
+        });
+        it('mappings', function () {
+            assert.equal(this.map.mappings, 'AAAA,IAAA,MAAA,EAAA,MAAA;AAAA,MAAA,GAAS,OAAA,CAAQ,cAAR,CAAT,CAAA;AAAA,MAAA,GAAA,YAAA;AAAA,IAGe,SAAA,MAAA,CAAC,IAAD,EAAO,GAAP,EAAA;AAAA,QACX,KAAC,IAAD,GAAQ,IAAR,CADW;AAAA,QAEX,KAAC,GAAD,GAAO,GAAP,CAFW;AAAA,KAHf;AAAA,kBAAA;AAAA,CAAA,EAAA,CAAA;AAAA,QAAA,CAOS,eAPT,EAO0B,YAAA;AAAA,IACxB,UAAA,CAAW,YAAA;AAAA,eACT,KAAC,KAAD,GAAS;AAAA,YACP,QADO;AAAA,YAEP,IAFO;AAAA,YAGP,IAHO;AAAA,YAIP,KAJO;AAAA,YAKP,IALO;AAAA,YAMP,SANO;AAAA,YAOP;AAAA,gBACE,QADF;AAAA,gBAEE,OAFF;AAAA,aAPO;AAAA,YAWP,EACE,MAAA,EAAQ,IADV,EAXO;AAAA,YAcP,GAdO;AAAA,YAeP,QAfO;AAAA,YAgBP,MAhBO;AAAA,YAiBH,IAAA,MAAA,CAAO,OAAP,EAAgB,CAAhB,CAjBG;AAAA,UADA;AAAA,KAAX,EADwB;AAAA,WAsBxB,EAAA,CAAG,MAAH,EAAW,YAAA;AAAA,QACT,IAAA,GAAA,EAAA,KAAA,CADS;AAAA,QACT,KAAA,GAAQ,KAAC,KAAD,CAAO,MAAP,GAAgB,CAAxB,CADS;AAAA,QAET,GAAA,GAAU,IAAA,MAAA,CAAO,KAAP,EAAc,CAAd,CAAV,CAFS;AAAA,eAGT,MAAA,CAAO,MAAA,CAAA,KAAA,CAAA,MAAA,CAAA,KAAA,CAAA,MAAA,CAAA,KAAA,CAAA,MAAA,CAAA,KAAA,CAAA,MAAA,CAAA,KAAA,MAAC,KAAD,oCAAO,MAAA,CAAA,KAAA,CAAA,KAAA,qCAAP,8BAAc,IAAd,0BAAsB,MAAA,CAAA,KAAA,CAAA,MAAA,CAAA,KAAA,CAAA,GAAA,8BAAI,IAAJ,sBAAtB;AAAA,YAAA,OAAA;AAAA,YAAA,QAAA;AAAA,YAAA,IAAA;AAAA,UAAP,EAHS;AAAA,KAAX,EAtBwB;AAAA,CAP1B');
+        });
+    });
+
+    describe('consuming generated sourceMap', function () {
+        beforeEach(function () {
+            this.consumer = new sourceMap.SourceMapConsumer(this.map);
+            var mappings = [];
+            this.consumer.eachMapping(function (mapping) {
+                mappings.push(mapping);
+            });
+            this.mappings = mappings;
+        });
+        it('mapping count', function () {
+            assert.equal(this.mappings.length, 223);
+        });
+        it('mapping with names', function () {
+            var withNames = this.mappings.filter(function (mapping) { return mapping.name; });
+            assert.equal(withNames.length, 0);
+        });
+        it('originalPosition', function () {
+
+            assert.deepEqual(this.consumer.generatedPositionFor({
+                source:'/absolute/path/to/coffee_script_test.coffee',
+                line:4,
+                column:16
+            }), {
+                line:4,
+                column:20
+            });
+
+            assert.deepEqual(this.consumer.originalPositionFor({line:4,column:4}),
+                             {source:'/absolute/path/to/coffee_script_test.coffee',line:4,column:15,name:null});
+
+            assert.deepEqual(this.consumer.originalPositionFor({line:32,column:8}),
+                             {source:'/absolute/path/to/coffee_script_test.coffee',line:31,column:4,name:null});
+
+            assert.deepEqual(this.consumer.originalPositionFor({line:34,column:15}),
+                             {source:'/absolute/path/to/coffee_script_test.coffee',line:33,column:4,name:null});
+        });
+    });
+});
