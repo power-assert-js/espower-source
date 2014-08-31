@@ -1,3 +1,11 @@
+## 0.9.0 (2014-08-31)
+
+
+#### Features
+
+* **espower-source:** backport espowerify to support multi-stage sourcemaps ([71de737c](https://github.com/twada/espower-source/commit/71de737cb16231db852a44592e896a43c447298b))
+
+
 ## 0.8.0 (2014-08-12)
 
 
