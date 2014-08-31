@@ -8,36 +8,79 @@
  * Licensed under the MIT license.
  *   https://github.com/twada/espower-source/blob/master/MIT-LICENSE.txt
  */
+'use strict';
+
 var espower = _dereq_('espower'),
     esprima = _dereq_('esprima'),
     escodegen = _dereq_('escodegen'),
     extend = _dereq_('xtend'),
-    convert = _dereq_('convert-source-map');
+    convert = _dereq_('convert-source-map'),
+    transfer = _dereq_('multi-stage-sourcemap').transfer;
 
-function espowerSource(jsCode, filepath, options) {
-    'use strict';
+function mergeSourceMap(incomingSourceMap, outgoingSourceMap) {
+    if (typeof outgoingSourceMap === 'string' || outgoingSourceMap instanceof String) {
+        outgoingSourceMap = JSON.parse(outgoingSourceMap);
+    }
+    if (!incomingSourceMap) {
+        return outgoingSourceMap;
+    }
+    return JSON.parse(transfer({fromSourceMap: outgoingSourceMap, toSourceMap: incomingSourceMap}));
+}
 
-    var jsAst, espowerOptions, modifiedAst, escodegenOutput, code, map;
+function handleUpstreamSourceMap (jsCode, options) {
+    var inMap;
+    if (options.sourceMap) {
+        inMap = options.sourceMap;
+    } else {
+        var commented = convert.fromSource(jsCode);
+        if (commented) {
+            inMap = commented.toObject();
+            options.sourceMap = inMap;
+        }
+    }
+    return inMap;
+}
 
-    jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, tokens: true, raw: true, source: filepath});
-    espowerOptions = extend(espower.defaultOptions(), options, {
-        destructive: true,
-        path: filepath
-    });
-    modifiedAst = espower(jsAst, espowerOptions);
-    escodegenOutput = escodegen.generate(modifiedAst, {
+function instrument (jsCode, filepath, options) {
+    var jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, source: filepath});
+    var modifiedAst = espower(jsAst, options);
+    // keep paths absolute by not using `file` and `sourceMapRoot`
+    // paths will be resolved by mold-source-map
+    return escodegen.generate(modifiedAst, {
         sourceMap: true,
         sourceMapWithCode: true
     });
-    code = escodegenOutput.code; // Generated source code
-    map = convert.fromJSON(escodegenOutput.map.toString());
-    map.sourcemap.sourcesContent = [jsCode];
-    return code + '\n' + map.toComment() + '\n';
+}
+
+function mergeEspowerOptions (options, filepath) {
+    return extend(espower.defaultOptions(), options, {
+        destructive: true,
+        path: filepath
+    });
+}
+
+function espowerSource(jsCode, filepath, options) {
+    var espowerOptions = mergeEspowerOptions(options, filepath);
+    var inMap = handleUpstreamSourceMap(jsCode, espowerOptions);
+    var instrumented = instrument(jsCode, filepath, espowerOptions);
+    var outMap = convert.fromJSON(instrumented.map.toString());
+    if (inMap) {
+        var mergedRawMap = mergeSourceMap(inMap, outMap.toObject());
+        var reMap = convert.fromObject(mergedRawMap);
+        reMap.setProperty('sources', inMap.sources);
+        reMap.setProperty('sourcesContent', inMap.sourcesContent);
+        return instrumented.code + '\n' + reMap.toComment() + '\n';
+    } else {
+        // Keeping paths absolute. Paths will be resolved by mold-source-map.
+        outMap.setProperty('sources', [filepath]);
+        outMap.setProperty('sourcesContent', [jsCode]);
+        return instrumented.code + '\n' + outMap.toComment() + '\n';
+    }
 }
 
 module.exports = espowerSource;
 
-},{"convert-source-map":8,"escodegen":9,"espower":14,"esprima":27,"xtend":39}],2:[function(_dereq_,module,exports){
+},{"convert-source-map":8,"escodegen":9,"espower":14,"esprima":28,"multi-stage-sourcemap":30,"xtend":42}],2:[function(_dereq_,module,exports){
 
 },{}],3:[function(_dereq_,module,exports){
 /*!
@@ -1720,7 +1763,7 @@ var path = _dereq_('path');
 var commentRx = /(?:\/\/|\/\*)[@#][ \t]+sourceMappingURL=data:(?:application|text)\/json;base64,((?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?)(?:[ \t]*\*\/)?$/mg;
 var mapFileCommentRx =
   // //# sourceMappingURL=foo.js.map                       /*# sourceMappingURL=foo.js.map */
-  /(?:\/\/[@|#][ \t]+sourceMappingURL=(.+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^\*]+?)[ \t]*(?:\*\/){1}[ \t]*$)/mg
+  /(?:\/\/[@#][ \t]+sourceMappingURL=(.+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^\*]+?)[ \t]*(?:\*\/){1}[ \t]*$)/mg
 
 function decodeBase64(base64) {
   return new Buffer(base64, 'base64').toString();
@@ -4141,7 +4184,7 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
 /* vim: set sw=4 ts=4 et tw=80 : */
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./package.json":13,"estraverse":28,"esutils":12,"source-map":29}],10:[function(_dereq_,module,exports){
+},{"./package.json":13,"estraverse":29,"esutils":12,"source-map":32}],10:[function(_dereq_,module,exports){
 /*
   Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
@@ -4472,7 +4515,7 @@ module.exports={
 
 var defaultOptions = _dereq_('./lib/default-options'),
     Instrumentor = _dereq_('./lib/instrumentor'),
-    deepCopy = _dereq_('./lib/ast-deepcopy'),
+    clone = _dereq_('clone'),
     extend = _dereq_('xtend');
 
 /**
@@ -4486,50 +4529,237 @@ function espower (ast, options) {
     return instrumentor.instrument(ast);
 }
 
-espower.deepCopy = deepCopy;
+espower.deepCopy = clone;
 espower.defaultOptions = defaultOptions;
 module.exports = espower;
 
-},{"./lib/ast-deepcopy":15,"./lib/default-options":16,"./lib/instrumentor":17,"xtend":39}],15:[function(_dereq_,module,exports){
-/**
- * Copyright (C) 2012 Yusuke Suzuki (twitter: @Constellation) and other contributors.
- * Released under the BSD license.
- * https://github.com/Constellation/esmangle/blob/master/LICENSE.BSD
- */
+},{"./lib/default-options":16,"./lib/instrumentor":17,"clone":18,"xtend":42}],15:[function(_dereq_,module,exports){
 'use strict';
 
-var isArray = Array.isArray || function isArray (array) {
-    return Object.prototype.toString.call(array) === '[object Array]';
-};
+var estraverse = _dereq_('estraverse'),
+    escodegen = _dereq_('escodegen'),
+    espurify = _dereq_('espurify'),
+    clone = _dereq_('clone'),
+    syntax = estraverse.Syntax,
+    canonicalCodeOptions = {
+        format: {
+            indent: {
+                style: ''
+            },
+            newline: ''
+        },
+        verbatim: 'x-verbatim-espower'
+    };
 
-function deepCopyInternal (obj, result) {
-    var key, val;
-    for (key in obj) {
-        if (key.lastIndexOf('__', 0) === 0) {
-            continue;
-        }
-        if (obj.hasOwnProperty(key)) {
-            val = obj[key];
-            if (typeof val === 'object' && val !== null) {
-                if (val instanceof RegExp) {
-                    val = new RegExp(val);
-                } else {
-                    val = deepCopyInternal(val, isArray(val) ? [] : {});
-                }
+// see: https://github.com/Constellation/escodegen/issues/115
+if (typeof define === 'function' && define.amd) {
+    escodegen = window.escodegen;
+}
+
+function AssertionVisitor (matcher, path, sourceMapConsumer, options) {
+    this.matcher = matcher;
+    this.assertionPath = [].concat(path);
+    this.sourceMapConsumer = sourceMapConsumer;
+    this.options = options;
+    this.currentArgumentPath = null;
+    this.argumentModified = false;
+}
+
+AssertionVisitor.prototype.enter = function (currentNode, parentNode) {
+    this.canonicalCode = generateCanonicalCode(currentNode);
+    this.powerAssertCallee = guessPowerAssertCalleeFor(currentNode.callee);
+
+    if (this.sourceMapConsumer) {
+        var pos = this.sourceMapConsumer.originalPositionFor({
+            line: currentNode.loc.start.line,
+            column: currentNode.loc.start.column
+        });
+        if (pos) {
+            // console.log(JSON.stringify(pos, null, 2));
+            if (pos.source) {
+                this.filepath = pos.source;
             }
-            result[key] = val;
+            if (pos.line) {
+                this.lineNum = pos.line;
+            }
         }
     }
-    return result;
+
+    if (!this.filepath) {
+        this.filepath = this.options.path;
+    }
+    if (!this.lineNum) {
+        this.lineNum = currentNode.loc.start.line;
+    }
+};
+
+AssertionVisitor.prototype.enterArgument = function (currentNode, parentNode, path) {
+    var argMatchResult = this.matcher.matchArgument(currentNode, parentNode);
+    if (argMatchResult) {
+        if (argMatchResult.name === 'message' && argMatchResult.kind === 'optional') {
+            // skip optional message argument
+            return undefined;
+        }
+        // entering target argument
+        this.currentArgumentPath = [].concat(path);
+        return undefined;
+    }
+    return undefined;
+};
+
+AssertionVisitor.prototype.leaveArgument = function (resultTree) {
+    this.currentArgumentPath = null;
+    if (this.argumentModified) {
+        this.argumentModified = false;
+        return this.captureArgument(resultTree);
+    } else {
+        return resultTree;
+    }
+};
+
+AssertionVisitor.prototype.isCapturingArgument = function () {
+    return !!this.currentArgumentPath;
+};
+
+AssertionVisitor.prototype.isLeavingAssertion = function (nodePath) {
+    return isPathIdentical(this.assertionPath, nodePath);
+};
+
+AssertionVisitor.prototype.isLeavingArgument = function (nodePath) {
+    return isPathIdentical(this.currentArgumentPath, nodePath);
+};
+
+AssertionVisitor.prototype.captureArgument = function (node) {
+    var n = newNodeWithLocationCopyOf(node),
+        props = [],
+        newCallee = updateLocRecursively(espurify(this.powerAssertCallee), n);
+    addLiteralTo(props, n, 'content', this.canonicalCode);
+    addLiteralTo(props, n, 'filepath', this.filepath);
+    addLiteralTo(props, n, 'line', this.lineNum);
+    return n({
+        type: syntax.CallExpression,
+        callee: n({
+            type: syntax.MemberExpression,
+            computed: false,
+            object: newCallee,
+            property: n({
+                type: syntax.Identifier,
+                name: '_expr'
+            })
+        }),
+        arguments: [node].concat(n({
+            type: syntax.ObjectExpression,
+            properties: props
+        }))
+    });
+};
+
+AssertionVisitor.prototype.captureNode = function (target, path) {
+    this.argumentModified = true;
+    var n = newNodeWithLocationCopyOf(target),
+        relativeEsPath = path.slice(this.assertionPath.length),
+        newCallee = updateLocRecursively(espurify(this.powerAssertCallee), n);
+    return n({
+        type: syntax.CallExpression,
+        callee: n({
+            type: syntax.MemberExpression,
+            computed: false,
+            object: newCallee,
+            property: n({
+                type: syntax.Identifier,
+                name: '_capt'
+            })
+        }),
+        arguments: [
+            target,
+            n({
+                type: syntax.Literal,
+                value: relativeEsPath.join('/')
+            })
+        ]
+    });
+};
+
+function guessPowerAssertCalleeFor (node) {
+    switch(node.type) {
+    case syntax.Identifier:
+        return node;
+    case syntax.MemberExpression:
+        return node.object; // Returns browser.assert when browser.assert.element(selector)
+    }
+    return null;
 }
 
-function deepCopy (obj) {
-    return deepCopyInternal(obj, isArray(obj) ? [] : {});
+function generateCanonicalCode (node) {
+    var ast = clone(node);
+    estraverse.replace(ast, {
+        leave: function (currentNode, parentNode) {
+            if (currentNode.type === syntax.Literal && typeof currentNode.raw !== 'undefined') {
+                currentNode['x-verbatim-espower'] = {
+                    content : currentNode.raw,
+                    precedence : escodegen.Precedence.Primary
+                };
+                return currentNode;
+            } else {
+                return undefined;
+            }
+        }
+    });
+    return escodegen.generate(ast, canonicalCodeOptions);
 }
 
-module.exports = deepCopy;
+function addLiteralTo (props, createNode, name, data) {
+    if (data) {
+        addToProps(props, createNode, name, createNode({
+            type: syntax.Literal,
+            value: data
+        }));
+    }
+}
 
-},{}],16:[function(_dereq_,module,exports){
+function addToProps (props, createNode, name, value) {
+    props.push(createNode({
+        type: syntax.Property,
+        key: createNode({
+            type: syntax.Identifier,
+            name: name
+        }),
+        value: value,
+        kind: 'init'
+    }));
+}
+
+function updateLocRecursively (node, n) {
+    estraverse.replace(node, {
+        leave: function (currentNode, parentNode) {
+            return n(currentNode);
+        }
+    });
+    return node;
+}
+
+function isPathIdentical (path1, path2) {
+    if (!path1 || !path2) {
+        return false;
+    }
+    return path1.join('/') === path2.join('/');
+}
+
+function newNodeWithLocationCopyOf (original) {
+    return function (newNode) {
+        if (typeof original.loc !== 'undefined') {
+            newNode.loc = clone(original.loc);
+        }
+        if (typeof original.range !== 'undefined') {
+            newNode.range = clone(original.range);
+        }
+        return newNode;
+    };
+}
+
+module.exports = AssertionVisitor;
+
+},{"clone":18,"escodegen":9,"espurify":23,"estraverse":29}],16:[function(_dereq_,module,exports){
 'use strict';
 
 module.exports = function defaultOptions () {
@@ -4552,10 +4782,10 @@ module.exports = function defaultOptions () {
 'use strict';
 
 var estraverse = _dereq_('estraverse'),
-    escodegen = _dereq_('escodegen'),
     escallmatch = _dereq_('escallmatch'),
-    espurify = _dereq_('espurify'),
-    deepCopy = _dereq_('./ast-deepcopy'),
+    SourceMapConsumer = _dereq_('source-map').SourceMapConsumer,
+    clone = _dereq_('clone'),
+    AssertionVisitor = _dereq_('./assertion-visitor'),
     typeName = _dereq_('type-name'),
     syntax = estraverse.Syntax,
     supportedNodeTypes = [
@@ -4572,269 +4802,110 @@ var estraverse = _dereq_('estraverse'),
         syntax.ConditionalExpression,
         syntax.UpdateExpression,
         syntax.Property
-    ],
-    canonicalCodeOptions = {
-        format: {
-            indent: {
-                style: ''
-            },
-            newline: ''
-        },
-        verbatim: 'x-verbatim-espower'
-    };
-
-// see: https://github.com/Constellation/escodegen/issues/115
-if (typeof define === 'function' && define.amd) {
-    escodegen = window.escodegen;
-}
+    ];
 
 function Instrumentor (options) {
     ensureOptionPrerequisites(options);
     this.options = options;
     this.matchers = options.patterns.map(escallmatch);
+    if (this.options.sourceMap) {
+        this.sourceMapConsumer = new SourceMapConsumer(this.options.sourceMap);
+    }
 }
 
 Instrumentor.prototype.instrument = function (ast) {
     ensureAstPrerequisites(ast, this.options);
     var that = this,
-        assertionPath,
-        argumentPath,
-        canonicalCode,
-        powerAssertCallee,
-        lineNum,
-        argumentModified = false,
+        assertionVisitor,
         skipping = false,
-        result = (this.options.destructive) ? ast : deepCopy(ast);
+        result = (this.options.destructive) ? ast : clone(ast);
 
     estraverse.replace(result, {
         enter: function (currentNode, parentNode) {
             var controller = this,
                 path = controller.path(),
                 currentPath = path ? path[path.length - 1] : null;
-            //console.log('enter currentNode:' + currentNode.type + ' parentNode: ' + parentNode.type + ' path: ' + path);
-
-            if (argumentPath) {
-                if ((!isSupportedNodeType(currentNode)) ||
-                    (isLeftHandSideOfAssignment(parentNode, currentPath)) ||
-                    (isObjectLiteralKey(parentNode, currentPath)) ||
-                    (isUpdateExpression(parentNode)) ||
-                    (isCallExpressionWithNonComputedMemberExpression(currentNode, parentNode, currentPath)) ||
-                    (isTypeOfOrDeleteUnaryExpression(currentNode, parentNode, currentPath))) {
-                    skipping = true;
-                    return estraverse.VisitorOption.Skip;
+            if (assertionVisitor) {
+                if (assertionVisitor.isCapturingArgument()) {
+                    if (toBeSkipped(currentNode, parentNode, currentPath)) {
+                        skipping = true;
+                        return controller.skip();
+                    }
+                } else {
+                    return assertionVisitor.enterArgument(currentNode, parentNode, path);
                 }
             } else {
-                if (!parentNode) {
-                    return undefined;
-                }
-                if (that.matchers.some(function (matcher) { return matcher.test(currentNode); })) {
+                var candidates = that.matchers.filter(function (matcher) { return matcher.test(currentNode); });
+                if (candidates.length === 1) {
                     // entering target assertion
-                    lineNum = currentNode.loc.start.line;
-                    canonicalCode = generateCanonicalCode(currentNode);
-                    assertionPath = [].concat(path);
-                    powerAssertCallee = guessPowerAssertCalleeFor(currentNode.callee);
-                    return undefined;
-                }
-                if (parentNode.type !== syntax.CallExpression || !isSupportedNodeType(currentNode)) {
-                    return undefined;
-                }
-                if (parentNode.callee === currentNode) {
-                    // skip callee
-                    return undefined;
-                }
-
-                var argumentMatchResults = that.matchers.map(function (matcher) {
-                    return matcher.matchArgument(currentNode, parentNode);
-                }).filter(function (result) {
-                    return result !== null;
-                });
-                if (argumentMatchResults.length === 1) {
-                    if (argumentMatchResults[0].name === 'message' && argumentMatchResults[0].kind === 'optional') {
-                        // skip optional message argument
-                        return undefined;
-                    }
-                    // entering target argument
-                    argumentPath = [].concat(path);
+                    assertionVisitor = new AssertionVisitor(candidates[0], path, that.sourceMapConsumer, that.options);
+                    assertionVisitor.enter(currentNode, parentNode);
                     return undefined;
                 }
             }
             return undefined;
         },
-
         leave: function (currentNode, parentNode) {
-            var controller = this,
-                path = controller.path(),
-                resultTree = currentNode,
-                relativeEsPath;
-            //console.log('leave ' + currentNode.type + ' path: ' + path);
-
+            var path = this.path(),
+                resultTree = currentNode;
+            if (!assertionVisitor) {
+                return undefined;
+            }
             if (skipping) {
                 skipping = false;
                 return undefined;
             }
-
-            if (isPathIdentical(assertionPath, path)) {
-                // leaving target assertion
-                canonicalCode = null;
-                lineNum = null;
-                assertionPath = null;
-                powerAssertCallee = null;
+            if (assertionVisitor.isLeavingAssertion(path)) {
+                assertionVisitor = null;
                 return undefined;
             }
-
-            if (!argumentPath) {
+            if (!assertionVisitor.isCapturingArgument()) {
                 return undefined;
             }
-
             if (isCalleeOfParent(currentNode, parentNode)) {
                 return undefined;
             }
-
-            relativeEsPath = path.slice(assertionPath.length);
-
-            //console.log('leave ' + currentNode.type + ' path: ' + path + ' ' + currentNode.name);
-            switch(currentNode.type) {
-            case syntax.Identifier:
-            case syntax.MemberExpression:
-            case syntax.CallExpression:
-            case syntax.UnaryExpression:
-            case syntax.BinaryExpression:
-            case syntax.LogicalExpression:
-            case syntax.AssignmentExpression:
-            case syntax.UpdateExpression:
-            case syntax.NewExpression:
-                resultTree = that.captureNode(currentNode, relativeEsPath, powerAssertCallee);
-                argumentModified = true;
-                break;
-            default:
-                break;
+            if (toBeCaptured(currentNode)) {
+                resultTree = assertionVisitor.captureNode(currentNode, path);
             }
-
-            if (isPathIdentical(argumentPath, path)) {
-                // leaving target argument
-                argumentPath = null;
-                if (argumentModified) {
-                    argumentModified = false;
-                    return that.captureArgument(resultTree, canonicalCode, powerAssertCallee, lineNum);
-                }
+            if (assertionVisitor.isLeavingArgument(path)) {
+                return assertionVisitor.leaveArgument(resultTree);
             }
-
             return resultTree;
         }
     });
     return result;
 };
 
-Instrumentor.prototype.captureArgument = function (node, canonicalCode, powerAssertCallee, lineNum) {
-    var n = newNodeWithLocationCopyOf(node),
-        props = [],
-        newCallee = updateLocRecursively(espurify(powerAssertCallee), n);
-    addLiteralTo(props, n, 'content', canonicalCode);
-    addLiteralTo(props, n, 'filepath', this.options.path);
-    addLiteralTo(props, n, 'line', lineNum);
-    return n({
-        type: syntax.CallExpression,
-        callee: n({
-            type: syntax.MemberExpression,
-            computed: false,
-            object: newCallee,
-            property: n({
-                type: syntax.Identifier,
-                name: '_expr'
-            })
-        }),
-        arguments: [node].concat(n({
-            type: syntax.ObjectExpression,
-            properties: props
-        }))
-    });
-};
-
-Instrumentor.prototype.captureNode = function (target, relativeEsPath, powerAssertCallee) {
-    var n = newNodeWithLocationCopyOf(target),
-        newCallee = updateLocRecursively(espurify(powerAssertCallee), n);
-    return n({
-        type: syntax.CallExpression,
-        callee: n({
-            type: syntax.MemberExpression,
-            computed: false,
-            object: newCallee,
-            property: n({
-                type: syntax.Identifier,
-                name: '_capt'
-            })
-        }),
-        arguments: [
-            target,
-            n({
-                type: syntax.Literal,
-                value: relativeEsPath.join('/')
-            })
-        ]
-    });
-};
-
-function updateLocRecursively (node, n) {
-    estraverse.replace(node, {
-        leave: function (currentNode, parentNode) {
-            return n(currentNode);
-        }
-    });
-    return node;
-}
-
-function guessPowerAssertCalleeFor (node) {
-    switch(node.type) {
-    case syntax.Identifier:
-        return node;
-    case syntax.MemberExpression:
-        return node.object; // Returns browser.assert when browser.assert.element(selector)
-    }
-    return null;
-}
-
-function generateCanonicalCode(node) {
-    var ast = deepCopy(node);
-    estraverse.replace(ast, {
-        leave: function (currentNode, parentNode) {
-            if (currentNode.type === syntax.Literal && typeof currentNode.raw !== 'undefined') {
-                currentNode['x-verbatim-espower'] = {
-                    content : currentNode.raw,
-                    precedence : escodegen.Precedence.Primary
-                };
-                return currentNode;
-            } else {
-                return undefined;
-            }
-        }
-    });
-    return escodegen.generate(ast, canonicalCodeOptions);
-}
-
-function addLiteralTo(props, createNode, name, data) {
-    if (data) {
-        addToProps(props, createNode, name, createNode({
-            type: syntax.Literal,
-            value: data
-        }));
-    }
-}
-
-function addToProps(props, createNode, name, value) {
-    props.push(createNode({
-        type: syntax.Property,
-        key: createNode({
-            type: syntax.Identifier,
-            name: name
-        }),
-        value: value,
-        kind: 'init'
-    }));
-}
-
 function isCalleeOfParent(currentNode, parentNode) {
     return (parentNode.type === syntax.CallExpression || parentNode.type === syntax.NewExpression) &&
         parentNode.callee === currentNode;
+}
+
+function toBeCaptured (currentNode) {
+    switch(currentNode.type) {
+    case syntax.Identifier:
+    case syntax.MemberExpression:
+    case syntax.CallExpression:
+    case syntax.UnaryExpression:
+    case syntax.BinaryExpression:
+    case syntax.LogicalExpression:
+    case syntax.AssignmentExpression:
+    case syntax.UpdateExpression:
+    case syntax.NewExpression:
+        return true;
+    default:
+        return false;
+    }
+}
+
+function toBeSkipped (currentNode, parentNode, currentPath) {
+    return !isSupportedNodeType(currentNode) ||
+        isLeftHandSideOfAssignment(parentNode, currentPath) ||
+        isObjectLiteralKey(parentNode, currentPath) ||
+        isUpdateExpression(parentNode) ||
+        isCallExpressionWithNonComputedMemberExpression(currentNode, parentNode, currentPath) ||
+        isTypeOfOrDeleteUnaryExpression(currentNode, parentNode, currentPath);
 }
 
 function isLeftHandSideOfAssignment(parentNode, currentPath) {
@@ -4860,25 +4931,6 @@ function isCallExpressionWithNonComputedMemberExpression(currentNode, parentNode
 function isTypeOfOrDeleteUnaryExpression(currentNode, parentNode, currentPath) {
     // 'typeof Identifier' or 'delete Identifier' is not instrumented
     return currentNode.type === syntax.Identifier && parentNode.type === syntax.UnaryExpression && (parentNode.operator === 'typeof' || parentNode.operator === 'delete') && currentPath === 'argument';
-}
-
-function isPathIdentical(path1, path2) {
-    if (!path1 || !path2) {
-        return false;
-    }
-    return path1.join('/') === path2.join('/');
-}
-
-function newNodeWithLocationCopyOf (original) {
-    return function (newNode) {
-        if (typeof original.loc !== 'undefined') {
-            newNode.loc = deepCopy(original.loc);
-        }
-        if (typeof original.range !== 'undefined') {
-            newNode.range = deepCopy(original.range);
-        }
-        return newNode;
-    };
 }
 
 function isSupportedNodeType (node) {
@@ -4907,7 +4959,140 @@ function ensureOptionPrerequisites (options) {
 
 module.exports = Instrumentor;
 
-},{"./ast-deepcopy":15,"escallmatch":18,"escodegen":9,"espurify":22,"estraverse":28,"type-name":26}],18:[function(_dereq_,module,exports){
+},{"./assertion-visitor":15,"clone":18,"escallmatch":19,"estraverse":29,"source-map":32,"type-name":27}],18:[function(_dereq_,module,exports){
+(function (Buffer){
+'use strict';
+
+function objectToString(o) {
+  return Object.prototype.toString.call(o);
+}
+
+// shim for Node's 'util' package
+// DO NOT REMOVE THIS! It is required for compatibility with EnderJS (http://enderjs.com/).
+var util = {
+  isArray: function (ar) {
+    return Array.isArray(ar) || (typeof ar === 'object' && objectToString(ar) === '[object Array]');
+  },
+  isDate: function (d) {
+    return typeof d === 'object' && objectToString(d) === '[object Date]';
+  },
+  isRegExp: function (re) {
+    return typeof re === 'object' && objectToString(re) === '[object RegExp]';
+  },
+  getRegExpFlags: function (re) {
+    var flags = '';
+    re.global && (flags += 'g');
+    re.ignoreCase && (flags += 'i');
+    re.multiline && (flags += 'm');
+    return flags;
+  }
+};
+
+
+if (typeof module === 'object')
+  module.exports = clone;
+
+/**
+ * Clones (copies) an Object using deep copying.
+ *
+ * This function supports circular references by default, but if you are certain
+ * there are no circular references in your object, you can save some CPU time
+ * by calling clone(obj, false).
+ *
+ * Caution: if `circular` is false and `parent` contains circular references,
+ * your program may enter an infinite loop and crash.
+ *
+ * @param `parent` - the object to be cloned
+ * @param `circular` - set to true if the object to be cloned may contain
+ *    circular references. (optional - true by default)
+ * @param `depth` - set to a number if the object is only to be cloned to
+ *    a particular depth. (optional - defaults to Infinity)
+ * @param `prototype` - sets the prototype to be used when cloning an object.
+ *    (optional - defaults to parent prototype).
+*/
+
+function clone(parent, circular, depth, prototype) {
+  // maintain two arrays for circular references, where corresponding parents
+  // and children have the same index
+  var allParents = [];
+  var allChildren = [];
+
+  var useBuffer = typeof Buffer != 'undefined';
+
+  if (typeof circular == 'undefined')
+    circular = true;
+
+  if (typeof depth == 'undefined')
+    depth = Infinity;
+
+  // recurse this function so we don't reset allParents and allChildren
+  function _clone(parent, depth) {
+    // cloning null always returns null
+    if (parent === null)
+      return null;
+
+    if (depth == 0)
+      return parent;
+
+    var child;
+    if (typeof parent != 'object') {
+      return parent;
+    }
+
+    if (util.isArray(parent)) {
+      child = [];
+    } else if (util.isRegExp(parent)) {
+      child = new RegExp(parent.source, util.getRegExpFlags(parent));
+      if (parent.lastIndex) child.lastIndex = parent.lastIndex;
+    } else if (util.isDate(parent)) {
+      child = new Date(parent.getTime());
+    } else if (useBuffer && Buffer.isBuffer(parent)) {
+      child = new Buffer(parent.length);
+      parent.copy(child);
+      return child;
+    } else {
+      if (typeof prototype == 'undefined') child = Object.create(Object.getPrototypeOf(parent));
+      else child = Object.create(prototype);
+    }
+
+    if (circular) {
+      var index = allParents.indexOf(parent);
+
+      if (index != -1) {
+        return allChildren[index];
+      }
+      allParents.push(parent);
+      allChildren.push(child);
+    }
+
+    for (var i in parent) {
+      child[i] = _clone(parent[i], depth - 1);
+    }
+
+    return child;
+  }
+
+  return _clone(parent, depth);
+}
+
+/**
+ * Simple flat clone using prototype, accepts only objects, usefull for property
+ * override on FLAT configuration object (no nested props).
+ *
+ * USE WITH CAUTION! This may not behave as you wish if you do not know how this
+ * works.
+ */
+clone.clonePrototype = function(parent) {
+  if (parent === null)
+    return null;
+
+  var c = function () {};
+  c.prototype = parent;
+  return new c();
+};
+
+}).call(this,_dereq_("buffer").Buffer)
+},{"buffer":3}],19:[function(_dereq_,module,exports){
 /**
  * escallmatch:
  *   ECMAScript CallExpression matcher made from function/method signature
@@ -4954,14 +5139,23 @@ Matcher.prototype.test = function (currentNode) {
 };
 
 Matcher.prototype.matchArgument = function (currentNode, parentNode) {
-    var indexOfCurrentArg, argNode;
     if (isCalleeOfParent(currentNode, parentNode)) {
         return null;
     }
     if (this.test(parentNode)) {
-        indexOfCurrentArg = parentNode.arguments.indexOf(currentNode);
-        argNode = this.signatureAst.arguments[indexOfCurrentArg];
-        return toArgumentSignature(argNode);
+        var indexOfCurrentArg = parentNode.arguments.indexOf(currentNode);
+        var numOptional = parentNode.arguments.length - this.numMinArgs;
+        var matchedSignatures = this.argumentSignatures().reduce(function (accum, argSig) {
+            if (argSig.kind === 'mandatory') {
+                accum.push(argSig);
+            }
+            if (argSig.kind === 'optional' && 0 < numOptional) {
+                numOptional -= 1;
+                accum.push(argSig);
+            }
+            return accum;
+        }, []);
+        return matchedSignatures[indexOfCurrentArg];
     }
     return null;
 };
@@ -5093,7 +5287,7 @@ function extractExpressionFrom (tree) {
 
 module.exports = createMatcher;
 
-},{"deep-equal":19,"esprima":27,"espurify":22,"estraverse":28}],19:[function(_dereq_,module,exports){
+},{"deep-equal":20,"esprima":28,"espurify":23,"estraverse":29}],20:[function(_dereq_,module,exports){
 var pSlice = Array.prototype.slice;
 var objectKeys = _dereq_('./lib/keys.js');
 var isArguments = _dereq_('./lib/is_arguments.js');
@@ -5189,7 +5383,7 @@ function objEquiv(a, b, opts) {
   return true;
 }
 
-},{"./lib/is_arguments.js":20,"./lib/keys.js":21}],20:[function(_dereq_,module,exports){
+},{"./lib/is_arguments.js":21,"./lib/keys.js":22}],21:[function(_dereq_,module,exports){
 var supportsArgumentsClass = (function(){
   return Object.prototype.toString.call(arguments)
 })() == '[object Arguments]';
@@ -5211,7 +5405,7 @@ function unsupported(object){
     false;
 };
 
-},{}],21:[function(_dereq_,module,exports){
+},{}],22:[function(_dereq_,module,exports){
 exports = module.exports = typeof Object.keys === 'function'
   ? Object.keys : shim;
 
@@ -5222,7 +5416,7 @@ function shim (obj) {
   return keys;
 }
 
-},{}],22:[function(_dereq_,module,exports){
+},{}],23:[function(_dereq_,module,exports){
 /**
  * espurify - Clone new AST without extra properties
  * 
@@ -5264,9 +5458,46 @@ function isSupportedKey (type, key) {
 
 module.exports = espurify;
 
-},{"./lib/ast-deepcopy":23,"./lib/ast-properties":24,"traverse":25}],23:[function(_dereq_,module,exports){
-module.exports=_dereq_(15)
-},{}],24:[function(_dereq_,module,exports){
+},{"./lib/ast-deepcopy":24,"./lib/ast-properties":25,"traverse":26}],24:[function(_dereq_,module,exports){
+/**
+ * Copyright (C) 2012 Yusuke Suzuki (twitter: @Constellation) and other contributors.
+ * Released under the BSD license.
+ * https://github.com/Constellation/esmangle/blob/master/LICENSE.BSD
+ */
+'use strict';
+
+var isArray = Array.isArray || function isArray (array) {
+    return Object.prototype.toString.call(array) === '[object Array]';
+};
+
+function deepCopyInternal (obj, result) {
+    var key, val;
+    for (key in obj) {
+        if (key.lastIndexOf('__', 0) === 0) {
+            continue;
+        }
+        if (obj.hasOwnProperty(key)) {
+            val = obj[key];
+            if (typeof val === 'object' && val !== null) {
+                if (val instanceof RegExp) {
+                    val = new RegExp(val);
+                } else {
+                    val = deepCopyInternal(val, isArray(val) ? [] : {});
+                }
+            }
+            result[key] = val;
+        }
+    }
+    return result;
+}
+
+function deepCopy (obj) {
+    return deepCopyInternal(obj, isArray(obj) ? [] : {});
+}
+
+module.exports = deepCopy;
+
+},{}],25:[function(_dereq_,module,exports){
 module.exports = {
     AssignmentExpression: ['type', 'operator', 'left', 'right'],
     ArrayExpression: ['type', 'elements'],
@@ -5319,7 +5550,7 @@ module.exports = {
     YieldExpression: ['type', 'argument']
 };
 
-},{}],25:[function(_dereq_,module,exports){
+},{}],26:[function(_dereq_,module,exports){
 var traverse = module.exports = function (obj) {
     return new Traverse(obj);
 };
@@ -5635,7 +5866,7 @@ var hasOwnProperty = Object.hasOwnProperty || function (obj, key) {
     return key in obj;
 };
 
-},{}],26:[function(_dereq_,module,exports){
+},{}],27:[function(_dereq_,module,exports){
 /**
  * type-name - Just a reasonable typeof
  * 
@@ -5675,7 +5906,7 @@ function typeName (val) {
 
 module.exports = typeName;
 
-},{}],27:[function(_dereq_,module,exports){
+},{}],28:[function(_dereq_,module,exports){
 /*
   Copyright (C) 2013 Ariya Hidayat <ariya.hidayat@gmail.com>
   Copyright (C) 2013 Thaddee Tyl <thaddee.tyl@gmail.com>
@@ -9433,7 +9664,7 @@ parseStatement: true, parseSourceElement: true */
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],28:[function(_dereq_,module,exports){
+},{}],29:[function(_dereq_,module,exports){
 /*
   Copyright (C) 2012-2013 Yusuke Suzuki <utatane.tea@gmail.com>
   Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
@@ -10124,7 +10355,58 @@ parseStatement: true, parseSourceElement: true */
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],29:[function(_dereq_,module,exports){
+},{}],30:[function(_dereq_,module,exports){
+/**
+ * Created by azu on 2014/07/02.
+ * LICENSE : MIT
+ */
+"use strict";
+module.exports = {
+    transfer: _dereq_("./lib/multi-stage-sourcemap")
+};
+},{"./lib/multi-stage-sourcemap":31}],31:[function(_dereq_,module,exports){
+"use strict";
+var sourceMap = _dereq_("source-map");
+var Generator = sourceMap.SourceMapGenerator;
+var Consumer = sourceMap.SourceMapConsumer;
+/**
+ * return re-mapped rawSourceMap string
+ * @param {object} mappingObject
+ * @param {string} mappingObject.fromSourceMap
+ * @param {string} mappingObject.toSourceMap
+ * @returns {string}
+ */
+function transfer(mappingObject) {
+    var fromSourceMap = mappingObject.fromSourceMap;
+    var toSourceMap = mappingObject.toSourceMap;
+    var fromSMC = new Consumer(fromSourceMap);
+    var toSMC = new Consumer(toSourceMap);
+    var resultMap = new Generator();
+    fromSMC.eachMapping(function (mapping) {
+        var generatedPosition = {
+            line: mapping.generatedLine,
+            column: mapping.generatedColumn
+        };
+        var fromOriginalPosition = {
+            line: mapping.originalLine,
+            column: mapping.originalColumn
+        };
+        // from's generated position -> to's original position
+        var originalPosition = toSMC.originalPositionFor(fromOriginalPosition);
+        if (originalPosition.source !== null) {
+            resultMap.addMapping({
+                source: originalPosition.source,
+                name : originalPosition.name,
+                generated: generatedPosition,
+                original: originalPosition
+            });
+        }
+    });
+    return resultMap.toString();
+}
+
+module.exports = transfer;
+},{"source-map":32}],32:[function(_dereq_,module,exports){
 /*
  * Copyright 2009-2011 Mozilla Foundation and contributors
  * Licensed under the New BSD license. See LICENSE.txt or:
@@ -10134,7 +10416,7 @@ exports.SourceMapGenerator = _dereq_('./source-map/source-map-generator').Source
 exports.SourceMapConsumer = _dereq_('./source-map/source-map-consumer').SourceMapConsumer;
 exports.SourceNode = _dereq_('./source-map/source-node').SourceNode;
 
-},{"./source-map/source-map-consumer":34,"./source-map/source-map-generator":35,"./source-map/source-node":36}],30:[function(_dereq_,module,exports){
+},{"./source-map/source-map-consumer":37,"./source-map/source-map-generator":38,"./source-map/source-node":39}],33:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -10233,7 +10515,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./util":37,"amdefine":38}],31:[function(_dereq_,module,exports){
+},{"./util":40,"amdefine":41}],34:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -10379,7 +10661,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./base64":32,"amdefine":38}],32:[function(_dereq_,module,exports){
+},{"./base64":35,"amdefine":41}],35:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -10423,7 +10705,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"amdefine":38}],33:[function(_dereq_,module,exports){
+},{"amdefine":41}],36:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -10506,7 +10788,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"amdefine":38}],34:[function(_dereq_,module,exports){
+},{"amdefine":41}],37:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -10986,7 +11268,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./array-set":30,"./base64-vlq":31,"./binary-search":33,"./util":37,"amdefine":38}],35:[function(_dereq_,module,exports){
+},{"./array-set":33,"./base64-vlq":34,"./binary-search":36,"./util":40,"amdefine":41}],38:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -11391,7 +11673,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./array-set":30,"./base64-vlq":31,"./util":37,"amdefine":38}],36:[function(_dereq_,module,exports){
+},{"./array-set":33,"./base64-vlq":34,"./util":40,"amdefine":41}],39:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -11801,7 +12083,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"./source-map-generator":35,"./util":37,"amdefine":38}],37:[function(_dereq_,module,exports){
+},{"./source-map-generator":38,"./util":40,"amdefine":41}],40:[function(_dereq_,module,exports){
 /* -*- Mode: js; js-indent-level: 2; -*- */
 /*
  * Copyright 2011 Mozilla Foundation and contributors
@@ -12122,7 +12404,7 @@ define(function (_dereq_, exports, module) {
 
 });
 
-},{"amdefine":38}],38:[function(_dereq_,module,exports){
+},{"amdefine":41}],41:[function(_dereq_,module,exports){
 (function (process,__filename){
 /** vim: et:ts=4:sw=4:sts=4
  * @license amdefine 0.1.0 Copyright (c) 2011, The Dojo Foundation All Rights Reserved.
@@ -12425,7 +12707,7 @@ function amdefine(module, requireFn) {
 module.exports = amdefine;
 
 }).call(this,_dereq_('_process'),"/node_modules/source-map/node_modules/amdefine/amdefine.js")
-},{"_process":7,"path":6}],39:[function(_dereq_,module,exports){
+},{"_process":7,"path":6}],42:[function(_dereq_,module,exports){
 module.exports = extend
 
 function extend() {
