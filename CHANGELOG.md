@@ -1,3 +1,11 @@
+### 0.9.1 (2014-09-15)
+
+
+#### Features
+
+* **espower-source:** update espower to 0.9.1 ([8acad23d](https://github.com/twada/espower-source/commit/8acad23d1eeb613c539ed1dba09830b86e932c0f))
+
+
 ## 0.9.0 (2014-08-31)
 
 
