@@ -55,10 +55,10 @@
   "homepage": "https://github.com/twada/espower-source",
   "keywords": [
     "power-assert",
-    "test",
     "assert",
-    "testing",
-    "ast"
+    "assertion",
+    "test",
+    "testing"
   ],
   "license": {
     "type": "MIT",
