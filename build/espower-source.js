@@ -922,7 +922,7 @@ Buffer.prototype.copy = function (target, target_start, start, end) {
 
   var len = end - start
 
-  if (len < 100 || !Buffer.TYPED_ARRAY_SUPPORT) {
+  if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
     for (var i = 0; i < len; i++) {
       target[i + target_start] = this[i + start]
     }
@@ -991,6 +991,7 @@ var BP = Buffer.prototype
  * Augment a Uint8Array *instance* (not the Uint8Array class!) with Buffer methods
  */
 Buffer._augment = function (arr) {
+  arr.constructor = Buffer
   arr._isBuffer = true
 
   // save reference to original Uint8Array get/set methods before overwriting
@@ -1613,6 +1614,8 @@ var process = module.exports = {};
 process.nextTick = (function () {
     var canSetImmediate = typeof window !== 'undefined'
     && window.setImmediate;
+    var canMutationObserver = typeof window !== 'undefined'
+    && window.MutationObserver;
     var canPost = typeof window !== 'undefined'
     && window.postMessage && window.addEventListener
     ;
@@ -1621,8 +1624,29 @@ process.nextTick = (function () {
         return function (f) { return window.setImmediate(f) };
     }
 
+    var queue = [];
+
+    if (canMutationObserver) {
+        var hiddenDiv = document.createElement("div");
+        var observer = new MutationObserver(function () {
+            var queueList = queue.slice();
+            queue.length = 0;
+            queueList.forEach(function (fn) {
+                fn();
+            });
+        });
+
+        observer.observe(hiddenDiv, { attributes: true });
+
+        return function nextTick(fn) {
+            if (!queue.length) {
+                hiddenDiv.setAttribute('yes', 'no');
+            }
+            queue.push(fn);
+        };
+    }
+
     if (canPost) {
-        var queue = [];
         window.addEventListener('message', function (ev) {
             var source = ev.source;
             if ((source === window || source === null) && ev.data === 'process-tick') {
@@ -1662,7 +1686,7 @@ process.emit = noop;
 
 process.binding = function (name) {
     throw new Error('process.binding is not supported');
-}
+};
 
 // TODO(shtylman)
 process.cwd = function () { return '/' };
@@ -1902,7 +1926,9 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
         DoWhileStatement: 'DoWhileStatement',
         DebuggerStatement: 'DebuggerStatement',
         EmptyStatement: 'EmptyStatement',
+        ExportBatchSpecifier: 'ExportBatchSpecifier',
         ExportDeclaration: 'ExportDeclaration',
+        ExportSpecifier: 'ExportSpecifier',
         ExpressionStatement: 'ExpressionStatement',
         ForStatement: 'ForStatement',
         ForInStatement: 'ForInStatement',
@@ -1912,12 +1938,14 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
         GeneratorExpression: 'GeneratorExpression',
         Identifier: 'Identifier',
         IfStatement: 'IfStatement',
+        ImportSpecifier: 'ImportSpecifier',
         ImportDeclaration: 'ImportDeclaration',
         Literal: 'Literal',
         LabeledStatement: 'LabeledStatement',
         LogicalExpression: 'LogicalExpression',
         MemberExpression: 'MemberExpression',
         MethodDefinition: 'MethodDefinition',
+        ModuleDeclaration: 'ModuleDeclaration',
         NewExpression: 'NewExpression',
         ObjectExpression: 'ObjectExpression',
         ObjectPattern: 'ObjectPattern',
@@ -1925,8 +1953,12 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
         Property: 'Property',
         ReturnStatement: 'ReturnStatement',
         SequenceExpression: 'SequenceExpression',
+        SpreadElement: 'SpreadElement',
         SwitchStatement: 'SwitchStatement',
         SwitchCase: 'SwitchCase',
+        TaggedTemplateExpression: 'TaggedTemplateExpression',
+        TemplateElement: 'TemplateElement',
+        TemplateLiteral: 'TemplateLiteral',
         ThisExpression: 'ThisExpression',
         ThrowStatement: 'ThrowStatement',
         TryStatement: 'TryStatement',
@@ -1938,6 +1970,75 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
         WithStatement: 'WithStatement',
         YieldExpression: 'YieldExpression'
     };
+
+    // Generation is done by generateExpression.
+    function isExpression(node) {
+        switch (node.type) {
+        case Syntax.AssignmentExpression:
+        case Syntax.ArrayExpression:
+        case Syntax.ArrayPattern:
+        case Syntax.BinaryExpression:
+        case Syntax.CallExpression:
+        case Syntax.ConditionalExpression:
+        case Syntax.ClassExpression:
+        case Syntax.ExportBatchSpecifier:
+        case Syntax.ExportSpecifier:
+        case Syntax.FunctionExpression:
+        case Syntax.Identifier:
+        case Syntax.ImportSpecifier:
+        case Syntax.Literal:
+        case Syntax.LogicalExpression:
+        case Syntax.MemberExpression:
+        case Syntax.MethodDefinition:
+        case Syntax.NewExpression:
+        case Syntax.ObjectExpression:
+        case Syntax.ObjectPattern:
+        case Syntax.Property:
+        case Syntax.SequenceExpression:
+        case Syntax.ThisExpression:
+        case Syntax.UnaryExpression:
+        case Syntax.UpdateExpression:
+        case Syntax.YieldExpression:
+            return true;
+        }
+        return false;
+    }
+
+    // Generation is done by generateStatement.
+    function isStatement(node) {
+        switch (node.type) {
+        case Syntax.BlockStatement:
+        case Syntax.BreakStatement:
+        case Syntax.CatchClause:
+        case Syntax.ContinueStatement:
+        case Syntax.ClassDeclaration:
+        case Syntax.ClassBody:
+        case Syntax.DirectiveStatement:
+        case Syntax.DoWhileStatement:
+        case Syntax.DebuggerStatement:
+        case Syntax.EmptyStatement:
+        case Syntax.ExpressionStatement:
+        case Syntax.ForStatement:
+        case Syntax.ForInStatement:
+        case Syntax.ForOfStatement:
+        case Syntax.FunctionDeclaration:
+        case Syntax.IfStatement:
+        case Syntax.LabeledStatement:
+        case Syntax.ModuleDeclaration:
+        case Syntax.Program:
+        case Syntax.ReturnStatement:
+        case Syntax.SwitchStatement:
+        case Syntax.SwitchCase:
+        case Syntax.ThrowStatement:
+        case Syntax.TryStatement:
+        case Syntax.VariableDeclaration:
+        case Syntax.VariableDeclarator:
+        case Syntax.WhileStatement:
+        case Syntax.WithStatement:
+            return true;
+        }
+        return false;
+    }
 
     Precedence = {
         Sequence: 0,
@@ -1959,8 +2060,9 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
         Postfix: 14,
         Call: 15,
         New: 16,
-        Member: 17,
-        Primary: 18
+        TaggedTemplate: 17,
+        Member: 18,
+        Primary: 19
     };
 
     BinaryPrecedence = {
@@ -3197,7 +3299,10 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
             } else {
                 result = [result + space, generateFunctionBody(expr)];
             }
+            break;
 
+        case Syntax.ExportBatchSpecifier:
+            result = '*';
             break;
 
         case Syntax.ArrayPattern:
@@ -3451,6 +3556,14 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
             result = generateIdentifier(expr);
             break;
 
+        case Syntax.ImportSpecifier:
+        case Syntax.ExportSpecifier:
+            result = [ expr.id.name ];
+            if (expr.name) {
+                result.push(noEmptySpace() + 'as' + noEmptySpace() + expr.name.name);
+            }
+            break;
+
         case Syntax.Literal:
             result = generateLiteral(expr);
             break;
@@ -3538,6 +3651,59 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
             result = [ 'for' + space + '(', fragment, ')' ];
             break;
 
+        case Syntax.SpreadElement:
+            result = [
+                '...',
+                generateExpression(expr.argument, {
+                    precedence: Precedence.Assignment,
+                    allowIn: true,
+                    allowCall: true
+                })
+            ];
+            break;
+
+        case Syntax.TaggedTemplateExpression:
+            result = [
+                generateExpression(expr.tag, {
+                    precedence: Precedence.Call,
+                    allowIn: true,
+                    allowCall: allowCall,
+                    allowUnparenthesizedNew: false
+                }),
+                generateExpression(expr.quasi, {
+                    precedence: Precedence.Primary
+                })
+            ];
+            result = parenthesize(result, Precedence.TaggedTemplate, precedence);
+            break;
+
+        case Syntax.TemplateElement:
+            // Don't use "cooked". Since tagged template can use raw template
+            // representation. So if we do so, it breaks the script semantics.
+            result = expr.value.raw;
+            break;
+
+        case Syntax.TemplateLiteral:
+            result = [ '`' ];
+            for (i = 0, len = expr.quasis.length; i < len; ++i) {
+                result.push(generateExpression(expr.quasis[i], {
+                    precedence: Precedence.Primary,
+                    allowIn: true,
+                    allowCall: true
+                }));
+                if (i + 1 < len) {
+                    result.push('${' + space);
+                    result.push(generateExpression(expr.expressions[i], {
+                        precedence: Precedence.Sequence,
+                        allowIn: true,
+                        allowCall: true
+                    }));
+                    result.push(space + '}');
+                }
+            }
+            result.push('`');
+            break;
+
         default:
             throw new Error('Unknown expression type: ' + expr.type);
         }
@@ -3548,11 +3714,94 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
         return toSourceNodeWhenNeeded(result, expr);
     }
 
+    // ES6: 15.2.1 valid import declarations:
+    //     - import ImportClause FromClause ;
+    //     - import ModuleSpecifier ;
+    function generateImportDeclaration(stmt, semicolon) {
+        var result, namedStart;
+
+        // If no ImportClause is present,
+        // this should be `import ModuleSpecifier` so skip `from`
+        // ModuleSpecifier is StringLiteral.
+        if (stmt.specifiers.length === 0) {
+            // import ModuleSpecifier ;
+            return [
+                'import',
+                space,
+                generateLiteral(stmt.source),
+                semicolon
+            ];
+        }
+
+        // import ImportClause FromClause ;
+        result = [
+            'import'
+        ];
+        namedStart = 0;
+
+        // ImportedBinding
+        if (stmt.specifiers[0]['default']) {
+            result = join(result, [
+                    stmt.specifiers[0].id.name
+            ]);
+            ++namedStart;
+        }
+
+        // NamedImports
+        if (stmt.specifiers[namedStart]) {
+            if (namedStart !== 0) {
+                result.push(',');
+            }
+            result.push(space + '{');
+
+            if ((stmt.specifiers.length - namedStart) === 1) {
+                // import { ... } from "...";
+                result.push(space);
+                result.push(generateExpression(stmt.specifiers[namedStart], {
+                    precedence: Precedence.Sequence,
+                    allowIn: true,
+                    allowCall: true
+                }));
+                result.push(space + '}' + space);
+            } else {
+                // import {
+                //    ...,
+                //    ...,
+                // } from "...";
+                withIndent(function (indent) {
+                    var i, iz;
+                    result.push(newline);
+                    for (i = namedStart, iz = stmt.specifiers.length; i < iz; ++i) {
+                        result.push(indent);
+                        result.push(generateExpression(stmt.specifiers[i], {
+                            precedence: Precedence.Sequence,
+                            allowIn: true,
+                            allowCall: true
+                        }));
+                        if (i + 1 < iz) {
+                            result.push(',' + newline);
+                        }
+                    }
+                });
+                if (!endsWithLineTerminator(toSourceNodeWhenNeeded(result).toString())) {
+                    result.push(newline);
+                }
+                result.push(base + '}' + space);
+            }
+        }
+
+        result = join(result, [
+            'from' + space,
+            generateLiteral(stmt.source),
+            semicolon
+        ]);
+        return result;
+    }
+
     function generateStatement(stmt, option) {
         var i,
             len,
             result,
-            specifier,
             allowIn,
             functionBody,
             directiveContext,
@@ -3690,11 +3939,69 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
             break;
 
         case Syntax.ExportDeclaration:
-            result = 'export ';
-            if (stmt.declaration) {
-                // FunctionDeclaration or VariableDeclaration
-                result = [result, generateStatement(stmt.declaration, { semicolonOptional: semicolon === '' })];
+            result = [ 'export' ];
+
+            // export default AssignmentExpression[In] ;
+            if (stmt['default']) {
+                result = join(result, 'default');
+                result = join(result, generateExpression(stmt.declaration, {
+                    precedence: Precedence.Assignment,
+                    allowIn: true,
+                    allowCall: true
+                }) + semicolon);
                 break;
+            }
+
+            // export * FromClause ;
+            // export ExportClause[NoReference] FromClause ;
+            // export ExportClause ;
+            if (stmt.specifiers) {
+                if (stmt.specifiers.length === 0) {
+                    result = join(result, '{' + space + '}');
+                } else if (stmt.specifiers[0].type === Syntax.ExportBatchSpecifier) {
+                    result = join(result, generateExpression(stmt.specifiers[0], {
+                        precedence: Precedence.Sequence,
+                        allowIn: true,
+                        allowCall: true
+                    }));
+                } else {
+                    result = join(result, '{');
+                    withIndent(function (indent) {
+                        var i, iz;
+                        result.push(newline);
+                        for (i = 0, iz = stmt.specifiers.length; i < iz; ++i) {
+                            result.push(indent);
+                            result.push(generateExpression(stmt.specifiers[i], {
+                                precedence: Precedence.Sequence,
+                                allowIn: true,
+                                allowCall: true
+                            }));
+                            if (i + 1 < iz) {
+                                result.push(',' + newline);
+                            }
+                        }
+                    });
+                    if (!endsWithLineTerminator(toSourceNodeWhenNeeded(result).toString())) {
+                        result.push(newline);
+                    }
+                    result.push(base + '}');
+                }
+                if (stmt.source) {
+                    result = join(result, [
+                        'from' + space,
+                        generateLiteral(stmt.source),
+                        semicolon
+                    ]);
+                } else {
+                    result.push(semicolon);
+                }
+                break;
+            }
+
+            // export VariableStatement
+            // export Declaration[Default]
+            if (stmt.declaration) {
+                result = join(result, generateStatement(stmt.declaration, { semicolonOptional: semicolon === '' }));
             }
             break;
 
@@ -3718,77 +4025,7 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
             break;
 
         case Syntax.ImportDeclaration:
-            // ES6: 15.2.1 valid import declarations:
-            //     - import ImportClause FromClause ;
-            //     - import ModuleSpecifier ;
-            // If no ImportClause is present,
-            // this should be `import ModuleSpecifier` so skip `from`
-            //
-            // ModuleSpecifier is StringLiteral.
-            if (stmt.specifiers.length === 0) {
-                // import ModuleSpecifier ;
-                result = [
-                    'import',
-                    space,
-                    generateLiteral(stmt.source)
-                ];
-            } else {
-                // import ImportClause FromClause ;
-                if (stmt.kind === 'default') {
-                    // import ... from "...";
-                    result = [
-                        'import',
-                        noEmptySpace(),
-                        stmt.specifiers[0].id.name,
-                        noEmptySpace()
-                    ];
-                } else {
-                    // stmt.kind === 'named'
-                    result = [
-                        'import',
-                        space,
-                        '{'
-                    ];
-
-                    if (stmt.specifiers.length === 1) {
-                        // import { ... } from "...";
-                        specifier = stmt.specifiers[0];
-                        result.push(space + specifier.id.name);
-                        if (specifier.name) {
-                            result.push(noEmptySpace() + 'as' + noEmptySpace() + specifier.name.name);
-                        }
-                        result.push(space + '}' + space);
-                    } else {
-                        // import {
-                        //    ...,
-                        //    ...,
-                        // } from "...";
-                        withIndent(function (indent) {
-                            var i, iz;
-                            result.push(newline);
-                            for (i = 0, iz = stmt.specifiers.length; i < iz; ++i) {
-                                specifier = stmt.specifiers[i];
-                                result.push(indent + specifier.id.name);
-                                if (specifier.name) {
-                                    result.push(noEmptySpace() + 'as' + noEmptySpace() + specifier.name.name);
-                                }
-
-                                if (i + 1 < iz) {
-                                    result.push(',' + newline);
-                                }
-                            }
-                        });
-                        if (!endsWithLineTerminator(toSourceNodeWhenNeeded(result).toString())) {
-                            result.push(newline);
-                        }
-                        result.push(base + '}' + space);
-                    }
-                }
-
-                result.push('from' + space);
-                result.push(generateLiteral(stmt.source));
-            }
-            result.push(semicolon);
+            result = generateImportDeclaration(stmt, semicolon);
             break;
 
         case Syntax.VariableDeclarator:
@@ -4022,6 +4259,19 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
             result = [stmt.label.name + ':', maybeBlock(stmt.body, semicolon === '')];
             break;
 
+        case Syntax.ModuleDeclaration:
+            result = [
+                'module',
+                noEmptySpace(),
+                stmt.id.name,
+                noEmptySpace(),
+                'from',
+                space,
+                generateLiteral(stmt.source),
+                semicolon
+            ];
+            break;
+
         case Syntax.Program:
             len = stmt.body.length;
             result = [safeConcatenation && len > 0 ? '\n' : ''];
@@ -4112,6 +4362,22 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
         return toSourceNodeWhenNeeded(result, stmt);
     }
 
+    function generateInternal(node) {
+        if (isStatement(node)) {
+            return generateStatement(node);
+        }
+
+        if (isExpression(node)) {
+            return generateExpression(node, {
+                precedence: Precedence.Sequence,
+                allowIn: true,
+                allowCall: true
+            });
+        }
+
+        throw new Error('Unknown node type: ' + node.type);
+    }
+
     function generate(node, options) {
         var defaultOptions = getDefaultOptions(), result, pair;
 
@@ -4168,70 +4434,7 @@ exports.__defineGetter__('mapFileCommentRegex', function () {
             }
         }
 
-        switch (node.type) {
-        case Syntax.BlockStatement:
-        case Syntax.BreakStatement:
-        case Syntax.CatchClause:
-        case Syntax.ContinueStatement:
-        case Syntax.ClassDeclaration:
-        case Syntax.ClassBody:
-        case Syntax.DirectiveStatement:
-        case Syntax.DoWhileStatement:
-        case Syntax.DebuggerStatement:
-        case Syntax.EmptyStatement:
-        case Syntax.ExpressionStatement:
-        case Syntax.ForStatement:
-        case Syntax.ForInStatement:
-        case Syntax.ForOfStatement:
-        case Syntax.FunctionDeclaration:
-        case Syntax.IfStatement:
-        case Syntax.LabeledStatement:
-        case Syntax.Program:
-        case Syntax.ReturnStatement:
-        case Syntax.SwitchStatement:
-        case Syntax.SwitchCase:
-        case Syntax.ThrowStatement:
-        case Syntax.TryStatement:
-        case Syntax.VariableDeclaration:
-        case Syntax.VariableDeclarator:
-        case Syntax.WhileStatement:
-        case Syntax.WithStatement:
-            result = generateStatement(node);
-            break;
-
-        case Syntax.AssignmentExpression:
-        case Syntax.ArrayExpression:
-        case Syntax.ArrayPattern:
-        case Syntax.BinaryExpression:
-        case Syntax.CallExpression:
-        case Syntax.ConditionalExpression:
-        case Syntax.ClassExpression:
-        case Syntax.FunctionExpression:
-        case Syntax.Identifier:
-        case Syntax.Literal:
-        case Syntax.LogicalExpression:
-        case Syntax.MemberExpression:
-        case Syntax.MethodDefinition:
-        case Syntax.NewExpression:
-        case Syntax.ObjectExpression:
-        case Syntax.ObjectPattern:
-        case Syntax.Property:
-        case Syntax.SequenceExpression:
-        case Syntax.ThisExpression:
-        case Syntax.UnaryExpression:
-        case Syntax.UpdateExpression:
-        case Syntax.YieldExpression:
-
-            result = generateExpression(node, {
-                precedence: Precedence.Sequence,
-                allowIn: true,
-                allowCall: true
-            });
-            break;
-
-        default:
-            throw new Error('Unknown node type: ' + node.type);
-        }
+        result = generateInternal(node);
 
         if (!sourceMap) {
             pair = {code: result.toString(), map: null};
@@ -4705,7 +4908,7 @@ module.exports={
     "esgenerate": "./bin/esgenerate.js",
     "escodegen": "./bin/escodegen.js"
   },
-  "version": "1.4.0",
+  "version": "1.4.1",
   "engines": {
     "node": ">=0.10.0"
   },
@@ -4755,24 +4958,25 @@ module.exports={
     "build-min": "cjsify -ma path: tools/entry-point.js > escodegen.browser.min.js",
     "build": "cjsify -a path: tools/entry-point.js > escodegen.browser.js"
   },
-  "gitHead": "1c4365a80b7ca04a8234e2b9a211f6619f810159",
+  "gitHead": "87296a9ac34dcaf6567bd7e3d351e4a227b434dc",
   "bugs": {
     "url": "https://github.com/Constellation/escodegen/issues"
   },
-  "_id": "escodegen@1.4.0",
-  "_shasum": "4b5a8942261f0fd65ac57523298b78d7cbe6701f",
-  "_from": "escodegen@>=1.4.0-0 <1.5.0-0",
+  "_id": "escodegen@1.4.1",
+  "_shasum": "8c2562ff45da348975953e8c0a57f40848962ec7",
+  "_from": "escodegen@~1.4.1",
   "_npmVersion": "2.0.0-alpha-5",
   "_npmUser": {
     "name": "constellation",
     "email": "utatane.tea@gmail.com"
   },
   "dist": {
-    "shasum": "4b5a8942261f0fd65ac57523298b78d7cbe6701f",
-    "tarball": "http://registry.npmjs.org/escodegen/-/escodegen-1.4.0.tgz"
+    "shasum": "8c2562ff45da348975953e8c0a57f40848962ec7",
+    "tarball": "http://registry.npmjs.org/escodegen/-/escodegen-1.4.1.tgz"
   },
   "directories": {},
-  "_resolved": "https://registry.npmjs.org/escodegen/-/escodegen-1.4.0.tgz"
+  "_resolved": "https://registry.npmjs.org/escodegen/-/escodegen-1.4.1.tgz",
+  "readme": "ERROR: No README data found!"
 }
 
 },{}],16:[function(_dereq_,module,exports){
@@ -13510,9 +13714,9 @@ define(function (_dereq_, exports, module) {
 
   /**
    * Decodes the next base 64 VLQ value from the given string and returns the
-   * value and the rest of the string.
+   * value and the rest of the string via the out parameter.
    */
-  exports.decode = function base64VLQ_decode(aStr) {
+  exports.decode = function base64VLQ_decode(aStr, aOutParam) {
     var i = 0;
     var strLen = aStr.length;
     var result = 0;
@@ -13530,10 +13734,8 @@ define(function (_dereq_, exports, module) {
       shift += VLQ_BASE_SHIFT;
     } while (continuation);
 
-    return {
-      value: fromVLQSigned(result),
-      rest: aStr.slice(i)
-    };
+    aOutParam.value = fromVLQSigned(result);
+    aOutParam.rest = aStr.slice(i);
   };
 
 });
@@ -13845,6 +14047,12 @@ define(function (_dereq_, exports, module) {
     }
   });
 
+  SourceMapConsumer.prototype._nextCharIsMappingSeparator =
+    function SourceMapConsumer_nextCharIsMappingSeparator(aStr) {
+      var c = aStr.charAt(0);
+      return c === ";" || c === ",";
+    };
+
   /**
    * Parse the mappings in a string in to a data structure which we can easily
    * query (the ordered arrays in the `this.__generatedMappings` and
@@ -13858,10 +14066,9 @@ define(function (_dereq_, exports, module) {
       var previousOriginalColumn = 0;
       var previousSource = 0;
       var previousName = 0;
-      var mappingSeparator = /^[,;]/;
       var str = aStr;
+      var temp = {};
       var mapping;
-      var temp;
 
       while (str.length > 0) {
         if (str.charAt(0) === ';') {
@@ -13877,41 +14084,41 @@ define(function (_dereq_, exports, module) {
           mapping.generatedLine = generatedLine;
 
           // Generated column.
-          temp = base64VLQ.decode(str);
+          base64VLQ.decode(str, temp);
           mapping.generatedColumn = previousGeneratedColumn + temp.value;
           previousGeneratedColumn = mapping.generatedColumn;
           str = temp.rest;
 
-          if (str.length > 0 && !mappingSeparator.test(str.charAt(0))) {
+          if (str.length > 0 && !this._nextCharIsMappingSeparator(str)) {
             // Original source.
-            temp = base64VLQ.decode(str);
+            base64VLQ.decode(str, temp);
             mapping.source = this._sources.at(previousSource + temp.value);
             previousSource += temp.value;
             str = temp.rest;
-            if (str.length === 0 || mappingSeparator.test(str.charAt(0))) {
+            if (str.length === 0 || this._nextCharIsMappingSeparator(str)) {
               throw new Error('Found a source, but no line and column');
             }
 
             // Original line.
-            temp = base64VLQ.decode(str);
+            base64VLQ.decode(str, temp);
             mapping.originalLine = previousOriginalLine + temp.value;
             previousOriginalLine = mapping.originalLine;
             // Lines are stored 0-based
             mapping.originalLine += 1;
             str = temp.rest;
-            if (str.length === 0 || mappingSeparator.test(str.charAt(0))) {
+            if (str.length === 0 || this._nextCharIsMappingSeparator(str)) {
               throw new Error('Found a source and line, but no column');
             }
 
             // Original column.
-            temp = base64VLQ.decode(str);
+            base64VLQ.decode(str, temp);
             mapping.originalColumn = previousOriginalColumn + temp.value;
             previousOriginalColumn = mapping.originalColumn;
             str = temp.rest;
 
-            if (str.length > 0 && !mappingSeparator.test(str.charAt(0))) {
+            if (str.length > 0 && !this._nextCharIsMappingSeparator(str)) {
               // Original name.
-              temp = base64VLQ.decode(str);
+              base64VLQ.decode(str, temp);
               mapping.name = this._names.at(previousName + temp.value);
               previousName += temp.value;
               str = temp.rest;
@@ -14284,7 +14491,7 @@ define(function (_dereq_, exports, module) {
           this._sourcesContents = {};
         }
         this._sourcesContents[util.toSetString(source)] = aSourceContent;
-      } else {
+      } else if (this._sourcesContents) {
         // Remove the source file from the _sourcesContents map.
         // If the _sourcesContents map is empty, set the property to null.
         delete this._sourcesContents[util.toSetString(source)];
@@ -14352,9 +14559,7 @@ define(function (_dereq_, exports, module) {
             }
             mapping.originalLine = original.line;
             mapping.originalColumn = original.column;
-            if (original.name != null && mapping.name != null) {
-              // Only use the identifier name if it's an identifier
-              // in both SourceMaps
+            if (original.name != null) {
               mapping.name = original.name;
             }
           }
