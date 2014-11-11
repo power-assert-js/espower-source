@@ -1,3 +1,10 @@
+## [0.10.0](https://github.com/twada/espower-source/releases/tag/v0.10.0) (2014-11-11)
+
+
+* **espower-source:**
+  * update espower to 0.10.0 ([cd05911e](https://github.com/twada/espower-source/commit/cd05911e9199ea079f8522348624387b92a97208))
+
+
 ### 0.9.1 (2014-09-15)
 
 
