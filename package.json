@@ -29,6 +29,7 @@
     "glob": "~4.3.1",
     "gulp": "~3.8.10",
     "gulp-derequire": "~2.0.0",
+    "gulp-dereserve": "~0.2.0",
     "gulp-jshint": "~1.9.0",
     "gulp-mocha": "~2.0.0",
     "gulp-mocha-phantomjs": "~0.5.1",
