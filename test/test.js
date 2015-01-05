@@ -251,7 +251,8 @@ describe('incoming code with SourceMap comment', function() {
                 column:16
             }), {
                 line:4,
-                column:20
+                column:20,
+                lastColumn: null
             });
 
             assert.deepEqual(this.consumer.originalPositionFor({line:4,column:4}),
