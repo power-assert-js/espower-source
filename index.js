@@ -3,7 +3,7 @@
  * 
  * https://github.com/twada/espower-source
  *
- * Copyright (c) 2014 Takuto Wada
+ * Copyright (c) 2014-2015 Takuto Wada
  * Licensed under the MIT license.
  *   https://github.com/twada/espower-source/blob/master/MIT-LICENSE.txt
  */
