@@ -74,6 +74,7 @@
     "bower": "bower install --config.interactive=false",
     "build": "gulp bundle",
     "lint": "gulp lint",
-    "test": "gulp test"
+    "test": "gulp test",
+    "unit": "gulp unit"
   }
 }
