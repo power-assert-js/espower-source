@@ -1,9 +1,12 @@
 espower-source
 ================================
 
-[![Build Status](https://travis-ci.org/twada/espower-source.svg?branch=master)](https://travis-ci.org/twada/espower-source)
-[![NPM version](https://badge.fury.io/js/espower-source.svg)](http://badge.fury.io/js/espower-source)
-[![Dependency Status](https://gemnasium.com/twada/espower-source.svg)](https://gemnasium.com/twada/espower-source)
+[![Build Status][travis-image]][travis-url]
+[![NPM package][npm-image]][npm-url]
+[![Bower package][bower-image]][bower-url]
+[![Dependency Status][depstat-image]][depstat-url]
+[![License][license-image]][license-url]
+
 
 Power Assert instrumentor from code to code, with SourceMap.
 
@@ -73,3 +76,19 @@ CONTRIBUTORS
 LICENSE
 ---------------------------------------
 Licensed under the [MIT](https://github.com/twada/espower-source/blob/master/MIT-LICENSE.txt) license.
+
+
+[npm-url]: https://npmjs.org/package/espower-source
+[npm-image]: https://badge.fury.io/js/espower-source.svg
+
+[bower-url]: http://badge.fury.io/bo/espower-source
+[bower-image]: https://badge.fury.io/bo/espower-source.svg
+
+[travis-url]: http://travis-ci.org/twada/espower-source
+[travis-image]: https://secure.travis-ci.org/twada/espower-source.svg?branch=master
+
+[depstat-url]: https://gemnasium.com/twada/espower-source
+[depstat-image]: https://gemnasium.com/twada/espower-source.svg
+
+[license-url]: https://github.com/twada/espower-source/blob/master/MIT-LICENSE.txt
+[license-image]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
