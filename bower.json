@@ -33,6 +33,6 @@
     "url": "git://github.com/twada/espower-source.git"
   },
   "devDependencies": {
-    "mocha": "~2.1.0"
+    "mocha": "~2.2.4"
   }
 }
