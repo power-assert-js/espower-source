@@ -2,7 +2,7 @@
   "name": "espower-source",
   "description": "Power Assert instrumentor from source to source, with source-map",
   "main": "build/espower-source.js",
-  "license": "MIT-LICENSE.txt",
+  "license": "MIT",
   "ignore": [
     "**/.*",
     "index.js",
