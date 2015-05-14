@@ -1,38 +1,38 @@
-var gulp = require('gulp'),
-    gutil = require('gulp-util'),
-    jshint = require('gulp-jshint'),
-    stylish = require('jshint-stylish'),
-    mocha = require('gulp-mocha'),
-    mochaPhantomJS = require('gulp-mocha-phantomjs'),
-    webserver = require('gulp-webserver'),
-    del = require('del'),
-    path = require('path'),
-    glob = require("glob"),
-    source = require('vinyl-source-stream'),
-    browserify = require('browserify'),
-    derequire = require('gulp-derequire'),
-    dereserve = require('gulp-dereserve'),
-    config = {
-        jshint: {
-            src: './index.js'
-        },
-        bundle: {
-            standalone: 'espowerSource',
-            srcFile: './index.js',
-            destDir: './build',
-            destName: 'espower-source.js'
-        },
-        test_bundle: {
-            srcFile: './test/*test.js',
-            destDir: './build',
-            destName: 'test.js'
-        },
-        test: {
-            base: './test/',
-            pattern: '**/*test.js',
-            browser: 'test/test-browser.html'
-        }
-    };
+var gulp = require('gulp');
+var gutil = require('gulp-util');
+var jshint = require('gulp-jshint');
+var stylish = require('jshint-stylish');
+var mocha = require('gulp-mocha');
+var mochaPhantomJS = require('gulp-mocha-phantomjs');
+var webserver = require('gulp-webserver');
+var del = require('del');
+var path = require('path');
+var glob = require("glob");
+var source = require('vinyl-source-stream');
+var browserify = require('browserify');
+var derequire = require('gulp-derequire');
+var dereserve = require('gulp-dereserve');
+var config = {
+    jshint: {
+        src: './index.js'
+    },
+    bundle: {
+        standalone: 'espowerSource',
+        srcFile: './index.js',
+        destDir: './build',
+        destName: 'espower-source.js'
+    },
+    test_bundle: {
+        srcFile: './test/*test.js',
+        destDir: './build',
+        destName: 'test.js'
+    },
+    test: {
+        base: './test/',
+        pattern: '**/*test.js',
+        browser: 'test/test-browser.html'
+    }
+};
 
 function runMochaSimply() {
     return gulp
