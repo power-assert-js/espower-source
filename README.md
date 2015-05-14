@@ -15,7 +15,7 @@ DESCRIPTION
 ---------------------------------------
 `espower-source` is a source code transformer that applies [espower](http://github.com/power-assert-js/espower) to target code.
 
-`espower` manipulates assertion expression (JavaScript Code) represented as [Mozilla JavaScript AST](https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API), to instrument power-assert feature into the code. SourceMap information is appended in SourceMap Comment syntax at the end of returned code.
+`espower` manipulates assertion expression in the form of ECMAScript AST defined in [The ESTree Spec](https://github.com/estree/estree) (formerly known as [Mozilla SpiderMonkey Parser API](https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API)), to instrument power-assert feature into the code. SourceMap information is appended in SourceMap Comment syntax at the end of returned code.
 
 Please note that `espower-source` is a beta version product. Pull-requests, issue reports and patches are always welcomed.
 
