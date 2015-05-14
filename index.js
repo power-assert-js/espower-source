@@ -1,11 +1,11 @@
 /**
  * espower-source - Power Assert instrumentor from source to source.
  * 
- * https://github.com/twada/espower-source
+ * https://github.com/power-assert-js/espower-source
  *
  * Copyright (c) 2014-2015 Takuto Wada
  * Licensed under the MIT license.
- *   https://github.com/twada/espower-source/blob/master/MIT-LICENSE.txt
+ *   https://github.com/power-assert-js/espower-source/blob/master/MIT-LICENSE.txt
  */
 'use strict';
 

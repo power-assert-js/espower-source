@@ -7,7 +7,7 @@
     "email": "takuto.wada@gmail.com",
     "url": "https://github.com/twada"
   },
-  "bugs": "https://github.com/twada/espower-source/issues",
+  "bugs": "https://github.com/power-assert-js/espower-source/issues",
   "contributors": [
     {
       "name": "azu",
@@ -53,7 +53,7 @@
     "package.json",
     "test"
   ],
-  "homepage": "https://github.com/twada/espower-source",
+  "homepage": "https://github.com/power-assert-js/espower-source",
   "keywords": [
     "power-assert",
     "assert",
@@ -63,12 +63,12 @@
   ],
   "license": {
     "type": "MIT",
-    "url": "https://github.com/twada/espower-source/blob/master/MIT-LICENSE.txt"
+    "url": "https://github.com/power-assert-js/espower-source/blob/master/MIT-LICENSE.txt"
   },
   "main": "./index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/twada/espower-source.git"
+    "url": "git://github.com/power-assert-js/espower-source.git"
   },
   "scripts": {
     "bower": "bower install --config.interactive=false",

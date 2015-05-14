@@ -27,10 +27,10 @@
       "url": "https://github.com/azu"
     }
   ],
-  "homepage": "https://github.com/twada/espower-source",
+  "homepage": "https://github.com/power-assert-js/espower-source",
   "repository": {
     "type": "git",
-    "url": "git://github.com/twada/espower-source.git"
+    "url": "git://github.com/power-assert-js/espower-source.git"
   },
   "devDependencies": {
     "mocha": "~2.2.4"
