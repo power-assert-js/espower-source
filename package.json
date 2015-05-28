@@ -15,10 +15,10 @@
     }
   ],
   "dependencies": {
-    "convert-source-map": "^1.0.0",
+    "convert-source-map": "^1.1.1",
     "escodegen": "^1.6.1",
-    "espower": "^0.10.0",
-    "esprima": "^2.1.0",
+    "espower": "^1.0.0",
+    "esprima": "^2.0.0",
     "multi-stage-sourcemap": "^0.2.1",
     "xtend": "^4.0.0"
   },
