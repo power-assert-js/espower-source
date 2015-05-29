@@ -69,9 +69,15 @@ function espowerSource(jsCode, filepath, options) {
     if (inMap) {
         var mergedRawMap = mergeSourceMap(inMap, outMap.toObject());
         var reMap = convert.fromObject(mergedRawMap);
-        reMap.setProperty('sources', inMap.sources);
-        reMap.setProperty('sourceRoot', inMap.sourceRoot);
-        reMap.setProperty('sourcesContent', inMap.sourcesContent);
+        if (inMap.sources) {
+            reMap.setProperty('sources', inMap.sources);
+        }
+        if (inMap.sourceRoot) {
+            reMap.setProperty('sourceRoot', inMap.sourceRoot);
+        }
+        if (inMap.sourcesContent) {
+            reMap.setProperty('sourcesContent', inMap.sourcesContent);
+        }
         return instrumented.code + '\n' + reMap.toComment() + '\n';
     } else {
         // Keeping paths absolute. Paths will be resolved by mold-source-map.
