@@ -70,6 +70,7 @@ function espowerSource(jsCode, filepath, options) {
         var mergedRawMap = mergeSourceMap(inMap, outMap.toObject());
         var reMap = convert.fromObject(mergedRawMap);
         reMap.setProperty('sources', inMap.sources);
+        reMap.setProperty('sourceRoot', inMap.sourceRoot);
         reMap.setProperty('sourcesContent', inMap.sourcesContent);
         return instrumented.code + '\n' + reMap.toComment() + '\n';
     } else {
