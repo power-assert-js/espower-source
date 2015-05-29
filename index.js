@@ -29,6 +29,9 @@ function mergeSourceMap(incomingSourceMap, outgoingSourceMap) {
 function handleUpstreamSourceMap (jsCode, options) {
     var inMap;
     if (options.sourceMap) {
+        if (typeof options.sourceMap === 'string' || options.sourceMap instanceof String) {
+            options.sourceMap = JSON.parse(options.sourceMap);
+        }
         inMap = options.sourceMap;
     } else {
         var commented = convert.fromSource(jsCode);

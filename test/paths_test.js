@@ -42,6 +42,10 @@ describe.only('incoming SourceMap support', function () {
             var compactCode = escodegen.generate(esprima.parse(convert.removeComments(result)), {format: {compact: true}});
 
             assert.equal(compactCode, "var str='foo';var anotherStr='bar';assert.equal(assert._expr(assert._capt(str,'arguments/0'),{content:'assert.equal(str, anotherStr)',filepath:'" + config.filepathInGeneratedCode + "',line:4}),assert._expr(assert._capt(anotherStr,'arguments/1'),{content:'assert.equal(str, anotherStr)',filepath:'" + config.filepathInGeneratedCode + "',line:4}));");
+
+            var outgoingSourceMap = convert.fromSource(result).toObject();
+            assert.equal(outgoingSourceMap.sources.length, 1);
+            assert.equal(outgoingSourceMap.sources[0], config.filepathInSourceMap);
         });
     }
 
@@ -54,41 +58,47 @@ describe.only('incoming SourceMap support', function () {
         incomingFilepath: '/path/to/absolute/original_test.js',
         incomingSourceMapRoot: null,
         espowerSourceRoot: null,
-        filepathInGeneratedCode: '/path/to/absolute/original_test.js'
+        filepathInGeneratedCode: '/path/to/absolute/original_test.js',
+        filepathInSourceMap: '/path/to/absolute/original_test.js'
     });
 
     incomingSourceMapTest('filepath in sourceMap is relative', {
         incomingFilepath: 'relative/original_test.js',
         incomingSourceMapRoot: null,
         espowerSourceRoot: null,
-        filepathInGeneratedCode: 'relative/original_test.js'
+        filepathInGeneratedCode: 'relative/original_test.js',
+        filepathInSourceMap: 'relative/original_test.js'
     });
 
     incomingSourceMapTest('when sourceMap.sourceRoot is given and options.sourceRoot is not given', {
         incomingFilepath: 'test/original_test.js',
         incomingSourceMapRoot: '/path/to/base',
         espowerSourceRoot: null,
-        filepathInGeneratedCode: 'test/original_test.js'
+        filepathInGeneratedCode: 'test/original_test.js',
+        filepathInSourceMap: 'test/original_test.js'
     });
 
     incomingSourceMapTest('when options.sourceRoot is given and sourceMap.sourceRoot is not given', {
         incomingFilepath: '/path/to/project/test/original_test.js',
         incomingSourceMapRoot: null,
         espowerSourceRoot: '/path/to/project/',
-        filepathInGeneratedCode: 'test/original_test.js'
+        filepathInGeneratedCode: 'test/original_test.js',
+        filepathInSourceMap: '/path/to/project/test/original_test.js'
     });
 
     incomingSourceMapTest('when both options.sourceRoot and sourceMap.sourceRoot are given, options.sourceRoot has precedence over sourceMap.sourceRoot', {
         incomingFilepath: 'project/test/original_test.js',
         incomingSourceMapRoot: '/path/to',
         espowerSourceRoot: '/path/to/project/',
-        filepathInGeneratedCode: 'test/original_test.js'
+        filepathInGeneratedCode: 'test/original_test.js',
+        filepathInSourceMap: 'project/test/original_test.js'
     });
 
     incomingSourceMapTest('when path in sourceMap is already relative, just use it even if sourceRoot exists', {
         incomingFilepath: 'already/relative/test.js',
         incomingSourceMapRoot: null,
         espowerSourceRoot: '/path/to/project/test/already/relative',
-        filepathInGeneratedCode: 'already/relative/test.js'
+        filepathInGeneratedCode: 'already/relative/test.js',
+        filepathInSourceMap: 'already/relative/test.js'
     });
 });
