@@ -20,6 +20,7 @@
     "espower": "^1.0.1",
     "esprima": "^2.0.0",
     "multi-stage-sourcemap": "^0.2.1",
+    "path-is-absolute": "^1.0.0",
     "xtend": "^4.0.0"
   },
   "devDependencies": {
