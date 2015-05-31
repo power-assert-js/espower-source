@@ -15,6 +15,8 @@ var escodegen = require('escodegen');
 var extend = require('xtend');
 var convert = require('convert-source-map');
 var transfer = require('multi-stage-sourcemap').transfer;
+var _path = require('path');
+var isAbsolute = require('path-is-absolute');
 
 function mergeSourceMap(incomingSourceMap, outgoingSourceMap) {
     if (typeof outgoingSourceMap === 'string' || outgoingSourceMap instanceof String) {
@@ -43,15 +45,43 @@ function handleUpstreamSourceMap (jsCode, options) {
     return inMap;
 }
 
-function instrument (jsCode, filepath, options) {
-    var jsAst = esprima.parse(jsCode, {tolerant: true, loc: true, source: filepath});
-    var modifiedAst = espower(jsAst, options);
-    // keep paths absolute by not using `file` and `sourceMapRoot`
-    // paths will be resolved by mold-source-map
-    return escodegen.generate(modifiedAst, {
-        sourceMap: true,
+function adjustPathsWithSourceRoot (filepath, sourceRoot) {
+    var relativePath;
+    if (isAbsolute(filepath)) {
+        relativePath = _path.relative(sourceRoot, filepath);
+        if (relativePath.split(_path.sep).indexOf('..') !== -1) {
+            // if absolute filepath conflicts with sourceRoot, use filepath only.
+            return {
+                sourceMap: filepath
+            };
+        }
+    } else {
+        relativePath = filepath;
+    }
+    return {
+        sourceMapRoot: sourceRoot,
+        sourceMap: relativePath
+    };
+}
+
+function generate (modifiedAst, jsCode, filepath, options) {
+    var extra;
+    if (options.sourceRoot) {
+        extra = adjustPathsWithSourceRoot(filepath, options.sourceRoot);
+    } else {
+        extra = { sourceMap: filepath };
+    }
+    var escodegenOptions = extend({
+        sourceContent: jsCode,
         sourceMapWithCode: true
-    });
+    }, extra);
+    return escodegen.generate(modifiedAst, escodegenOptions);
+}
+
+function instrument (jsCode, filepath, options) {
+    var jsAst = esprima.parse(jsCode, {tolerant: true, loc: true});
+    var modifiedAst = espower(jsAst, options);
+    return generate(modifiedAst, jsCode, filepath, options);
 }
 
 function mergeEspowerOptions (options, filepath) {
@@ -80,9 +110,6 @@ function espowerSource(jsCode, filepath, options) {
         }
         return instrumented.code + '\n' + reMap.toComment() + '\n';
     } else {
-        // Keeping paths absolute. Paths will be resolved by mold-source-map.
-        outMap.setProperty('sources', [filepath]);
-        outMap.setProperty('sourcesContent', [jsCode]);
         return instrumented.code + '\n' + outMap.toComment() + '\n';
     }
 }

@@ -111,4 +111,91 @@ describe('incoming SourceMap support', function () {
         filepathInSourceMap: 'already/relative/test.js',
         sourceRootInOutgoingSourceMap: undefined
     });
+
+
+    incomingSourceMapTest('incoming absolute filepath conflicts with sourceMap.sourceRoot', {
+        incomingFilepath: '/some/path/to/project/test/original_test.js',
+        incomingSourceMapRoot: '/another/path/to/project/',
+        espowerSourceRoot: undefined,
+        filepathInGeneratedCode: 'original_test.js',
+        filepathInSourceMap: '/some/path/to/project/test/original_test.js',
+        sourceRootInOutgoingSourceMap: '/another/path/to/project/'
+    });
+});
+
+
+
+describe('without incoming SourceMap', function () {
+
+    function withoutIncomingSourceMapTest (testName, config) {
+        it(testName, function () {
+            var originalCode = 'var str = "foo";\nvar anotherStr = "bar"\n\nassert.equal(\nstr,\nanotherStr\n);';
+            var espowerOptions = {
+                patterns: [
+                    'assert.equal(actual, expected, [message])'
+                ],
+                sourceRoot: config.espowerSourceRoot
+            };
+
+            var result = espowerSource(originalCode, config.incomingFilepath, espowerOptions);
+            var compactCode = escodegen.generate(esprima.parse(convert.removeComments(result)), {format: {compact: true}});
+
+            assert.equal(compactCode, "var str='foo';var anotherStr='bar';assert.equal(assert._expr(assert._capt(str,'arguments/0'),{content:'assert.equal(str, anotherStr)',filepath:'" + config.filepathInGeneratedCode + "',line:4}),assert._expr(assert._capt(anotherStr,'arguments/1'),{content:'assert.equal(str, anotherStr)',filepath:'" + config.filepathInGeneratedCode + "',line:4}));", 'filepathInGeneratedCode');
+
+            var outgoingSourceMap = convert.fromSource(result).toObject();
+            assert.equal(outgoingSourceMap.sources.length, 1);
+            assert.equal(outgoingSourceMap.sources[0], config.filepathInSourceMap, 'filepathInSourceMap');
+            assert.equal(outgoingSourceMap.sourcesContent.length, 1);
+            assert.equal(outgoingSourceMap.sourcesContent[0], originalCode);
+            assert.equal(outgoingSourceMap.sourceRoot, config.sourceRootInOutgoingSourceMap);
+        });
+    }
+
+    withoutIncomingSourceMapTest('incoming filepath is absolute', {
+        incomingFilepath: '/path/to/absolute/original_test.js',
+        espowerSourceRoot: undefined,
+        filepathInGeneratedCode: '/path/to/absolute/original_test.js',
+        filepathInSourceMap: '/path/to/absolute/original_test.js',
+        sourceRootInOutgoingSourceMap: undefined
+    });
+
+    withoutIncomingSourceMapTest('incoming filepath is relative', {
+        incomingFilepath: 'relative/original_test.js',
+        espowerSourceRoot: undefined,
+        filepathInGeneratedCode: 'relative/original_test.js',
+        filepathInSourceMap: 'relative/original_test.js',
+        sourceRootInOutgoingSourceMap: undefined
+    });
+
+    withoutIncomingSourceMapTest('incoming filepath is absolute and options.sourceRoot is given', {
+        incomingFilepath: '/path/to/project/test/original_test.js',
+        espowerSourceRoot: '/path/to/project/',
+        filepathInGeneratedCode: 'test/original_test.js',
+        filepathInSourceMap: 'test/original_test.js',
+        sourceRootInOutgoingSourceMap: '/path/to/project/'
+    });
+
+    withoutIncomingSourceMapTest('incoming filepath is relative and options.sourceRoot is given', {
+        incomingFilepath: 'test/original_test.js',
+        espowerSourceRoot: '/path/to/project/',
+        filepathInGeneratedCode: 'test/original_test.js',
+        filepathInSourceMap: 'test/original_test.js',
+        sourceRootInOutgoingSourceMap: '/path/to/project/'
+    });
+
+    withoutIncomingSourceMapTest('when incoming relative filepath and options.sourceRoot is overlapped', {
+        incomingFilepath: 'any/great/project/test/original_test.js',
+        espowerSourceRoot: '/path/to/any/great/project/',
+        filepathInGeneratedCode: 'any/great/project/test/original_test.js',
+        filepathInSourceMap: 'any/great/project/test/original_test.js',
+        sourceRootInOutgoingSourceMap: '/path/to/any/great/project/'
+    });
+
+    withoutIncomingSourceMapTest('when incoming absolute filepath conflicts with options.sourceRoot', {
+        incomingFilepath: '/some/path/to/project/test/original_test.js',
+        espowerSourceRoot: '/another/path/to/project/',
+        filepathInGeneratedCode: 'original_test.js',
+        filepathInSourceMap: '/some/path/to/project/test/original_test.js',
+        sourceRootInOutgoingSourceMap: undefined
+    });
 });
