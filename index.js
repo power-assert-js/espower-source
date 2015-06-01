@@ -18,7 +18,7 @@ var transfer = require('multi-stage-sourcemap').transfer;
 var _path = require('path');
 var isAbsolute = require('path-is-absolute');
 
-function mergeSourceMap(incomingSourceMap, outgoingSourceMap) {
+function mergeSourceMap (incomingSourceMap, outgoingSourceMap) {
     if (typeof outgoingSourceMap === 'string' || outgoingSourceMap instanceof String) {
         outgoingSourceMap = JSON.parse(outgoingSourceMap);
     }
@@ -91,7 +91,7 @@ function mergeEspowerOptions (options, filepath) {
     });
 }
 
-function espowerSource(jsCode, filepath, options) {
+module.exports = function espowerSource (jsCode, filepath, options) {
     var espowerOptions = mergeEspowerOptions(options, filepath);
     var inMap = handleIncomingSourceMap(jsCode, espowerOptions);
     var instrumented = instrument(jsCode, filepath, espowerOptions);
@@ -112,6 +112,4 @@ function espowerSource(jsCode, filepath, options) {
     } else {
         return instrumented.code + '\n' + outMap.toComment() + '\n';
     }
-}
-
-module.exports = espowerSource;
+};
