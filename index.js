@@ -28,7 +28,7 @@ function mergeSourceMap(incomingSourceMap, outgoingSourceMap) {
     return JSON.parse(transfer({fromSourceMap: outgoingSourceMap, toSourceMap: incomingSourceMap}));
 }
 
-function handleUpstreamSourceMap (jsCode, options) {
+function handleIncomingSourceMap (jsCode, options) {
     var inMap;
     if (options.sourceMap) {
         if (typeof options.sourceMap === 'string' || options.sourceMap instanceof String) {
@@ -93,7 +93,7 @@ function mergeEspowerOptions (options, filepath) {
 
 function espowerSource(jsCode, filepath, options) {
     var espowerOptions = mergeEspowerOptions(options, filepath);
-    var inMap = handleUpstreamSourceMap(jsCode, espowerOptions);
+    var inMap = handleIncomingSourceMap(jsCode, espowerOptions);
     var instrumented = instrument(jsCode, filepath, espowerOptions);
     var outMap = convert.fromJSON(instrumented.map.toString());
     if (inMap) {
