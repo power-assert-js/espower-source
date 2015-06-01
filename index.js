@@ -85,9 +85,10 @@ function instrument (jsCode, filepath, options) {
 }
 
 function mergeEspowerOptions (options, filepath) {
-    return extend(espower.defaultOptions(), options, {
-        destructive: true,
+    return extend(espower.defaultOptions(), {
         path: filepath
+    }, options, {
+        destructive: true
     });
 }
 

@@ -50,7 +50,7 @@ Original JavaScript source code that is a source of code transformation.
 |:---------|:--------------|
 | `string` | N/A           |
 
-Filepath of `originalCode`. If passed, espowerSource stores filepath information for later reporting.
+Filepath of `originalCode`. espower-source stores filepath information for later reporting.
 
 #### options
 
@@ -58,7 +58,7 @@ Filepath of `originalCode`. If passed, espowerSource stores filepath information
 |:---------|:--------------|
 | `object` | (return value of `espower.defaultOptions()` but with `destructive` option is `true`) |
 
-Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/power-assert-js/espower#var-options--espowerdefaultoptions)) will be used, but `destructive` option is set to `true` by espower-source module.
+Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/power-assert-js/espower#var-options--espowerdefaultoptions)) will be used, but `options.destructive` is set to `true`, and if `options.path` is falsy, `options.path` is set to value of `filepath` argument by espower-source module.
 
 
 AUTHOR

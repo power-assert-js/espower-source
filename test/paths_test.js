@@ -133,9 +133,14 @@ describe('without incoming SourceMap', function () {
             var espowerOptions = {
                 patterns: [
                     'assert.equal(actual, expected, [message])'
-                ],
-                sourceRoot: config.espowerSourceRoot
+                ]
             };
+            if (config.espowerSourceRoot) {
+                espowerOptions.sourceRoot = config.espowerSourceRoot;
+            }
+            if (config.espowerPath) {
+                espowerOptions.path = config.espowerPath;
+            }
 
             var result = espowerSource(originalCode, config.incomingFilepath, espowerOptions);
             var compactCode = escodegen.generate(esprima.parse(convert.removeComments(result)), {format: {compact: true}});
@@ -197,5 +202,25 @@ describe('without incoming SourceMap', function () {
         filepathInGeneratedCode: 'original_test.js',
         filepathInSourceMap: '/some/path/to/project/test/original_test.js',
         sourceRootInOutgoingSourceMap: undefined
+    });
+
+
+
+    withoutIncomingSourceMapTest('options.path has precedence over filepath argument and affects only on filepath in generated code', {
+        incomingFilepath: '/absolute/path/to/relative/original_test.js',
+        espowerSourceRoot: undefined,
+        espowerPath: 'relative/original_test.js',
+        filepathInGeneratedCode: 'relative/original_test.js',
+        filepathInSourceMap: '/absolute/path/to/relative/original_test.js',
+        sourceRootInOutgoingSourceMap: undefined
+    });
+
+    withoutIncomingSourceMapTest('all of filepath, options.path and options.sourceRoot are given', {
+        incomingFilepath: '/absolute/path/to/relative/original_test.js',
+        espowerSourceRoot: '/absolute/path/to/',
+        espowerPath: 'relative/original_test.js',
+        filepathInGeneratedCode: 'relative/original_test.js',
+        filepathInSourceMap: 'relative/original_test.js',
+        sourceRootInOutgoingSourceMap: '/absolute/path/to/'
     });
 });
