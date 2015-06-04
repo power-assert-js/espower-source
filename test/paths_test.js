@@ -62,7 +62,7 @@ describe('incoming SourceMap support', function () {
         incomingFilepath: '/path/to/absolute/original_test.js',
         incomingSourceMapRoot: undefined,
         espowerSourceRoot: undefined,
-        filepathInGeneratedCode: '/path/to/absolute/original_test.js',
+        filepathInGeneratedCode: 'original_test.js',
         filepathInSourceMap: '/path/to/absolute/original_test.js',
         sourceRootInOutgoingSourceMap: undefined
     });
@@ -159,7 +159,7 @@ describe('without incoming SourceMap', function () {
     withoutIncomingSourceMapTest('incoming filepath is absolute', {
         incomingFilepath: '/path/to/absolute/original_test.js',
         espowerSourceRoot: undefined,
-        filepathInGeneratedCode: '/path/to/absolute/original_test.js',
+        filepathInGeneratedCode: 'original_test.js',
         filepathInSourceMap: '/path/to/absolute/original_test.js',
         sourceRootInOutgoingSourceMap: undefined
     });
