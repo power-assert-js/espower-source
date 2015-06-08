@@ -46,10 +46,10 @@ describe('incoming SourceMap support', function () {
 
             var outgoingSourceMap = convert.fromSource(result).toObject();
             assert.equal(outgoingSourceMap.sources.length, 1);
-            assert.equal(outgoingSourceMap.sources[0], config.filepathInSourceMap);
+            assert.equal(outgoingSourceMap.sources[0], config.filepathInSourceMap, 'filepath of outgoing SourceMap');
             assert.equal(outgoingSourceMap.sourcesContent.length, 1);
-            assert.equal(outgoingSourceMap.sourcesContent[0], originalCode);
-            assert.equal(outgoingSourceMap.sourceRoot, config.sourceRootInOutgoingSourceMap);
+            assert.equal(outgoingSourceMap.sourcesContent[0], originalCode, 'sourcesContent of outgoing SourceMap');
+            assert.equal(outgoingSourceMap.sourceRoot, config.sourceRootInOutgoingSourceMap, 'sourcesRoot of outgoing SourceMap');
         });
     }
 
@@ -112,7 +112,6 @@ describe('incoming SourceMap support', function () {
         sourceRootInOutgoingSourceMap: undefined
     });
 
-
     incomingSourceMapTest('incoming absolute filepath conflicts with sourceMap.sourceRoot', {
         incomingFilepath: '/some/path/to/project/test/original_test.js',
         incomingSourceMapRoot: '/another/path/to/project/',
@@ -120,6 +119,24 @@ describe('incoming SourceMap support', function () {
         filepathInGeneratedCode: 'original_test.js',
         filepathInSourceMap: '/some/path/to/project/test/original_test.js',
         sourceRootInOutgoingSourceMap: '/another/path/to/project/'
+    });
+
+    incomingSourceMapTest('when filepath is relative and sourceMap.sourceRoot is locating source files on a server, and options.sourceRoot is given, then try to create relative path', {
+        incomingFilepath: 'test/original_test.js',
+        incomingSourceMapRoot: 'http://example.com/www/js/',
+        espowerSourceRoot: '/path/to/project/',
+        filepathInGeneratedCode: 'test/original_test.js',
+        filepathInSourceMap: 'test/original_test.js',
+        sourceRootInOutgoingSourceMap: 'http://example.com/www/js/'
+    });
+
+    incomingSourceMapTest('when filepath is absolute and sourceMap.sourceRoot is locating source files on a server, and options.sourceRoot is given, then fallback on basename', {
+        incomingFilepath: '/path/to/project/test/original_test.js',
+        incomingSourceMapRoot: 'http://example.com/www/js/',
+        espowerSourceRoot: '/path/to/project/',
+        filepathInGeneratedCode: 'original_test.js',
+        filepathInSourceMap: '/path/to/project/test/original_test.js',
+        sourceRootInOutgoingSourceMap: 'http://example.com/www/js/'
     });
 });
 
