@@ -177,7 +177,7 @@ describe('without incoming SourceMap', function () {
         espowerSourceRoot: '/path/to/project/',
         filepathInGeneratedCode: 'test/original_test.js',
         filepathInSourceMap: 'test/original_test.js',
-        sourceRootInOutgoingSourceMap: '/path/to/project/'
+        sourceRootInOutgoingSourceMap: undefined
     });
 
     withoutIncomingSourceMapTest('incoming filepath is relative and options.sourceRoot is given', {
@@ -185,7 +185,7 @@ describe('without incoming SourceMap', function () {
         espowerSourceRoot: '/path/to/project/',
         filepathInGeneratedCode: 'test/original_test.js',
         filepathInSourceMap: 'test/original_test.js',
-        sourceRootInOutgoingSourceMap: '/path/to/project/'
+        sourceRootInOutgoingSourceMap: undefined
     });
 
     withoutIncomingSourceMapTest('when incoming relative filepath and options.sourceRoot is overlapped', {
@@ -193,7 +193,7 @@ describe('without incoming SourceMap', function () {
         espowerSourceRoot: '/path/to/any/great/project/',
         filepathInGeneratedCode: 'any/great/project/test/original_test.js',
         filepathInSourceMap: 'any/great/project/test/original_test.js',
-        sourceRootInOutgoingSourceMap: '/path/to/any/great/project/'
+        sourceRootInOutgoingSourceMap: undefined
     });
 
     withoutIncomingSourceMapTest('when incoming absolute filepath conflicts with options.sourceRoot', {
@@ -221,6 +221,6 @@ describe('without incoming SourceMap', function () {
         espowerPath: 'relative/original_test.js',
         filepathInGeneratedCode: 'relative/original_test.js',
         filepathInSourceMap: 'relative/original_test.js',
-        sourceRootInOutgoingSourceMap: '/absolute/path/to/'
+        sourceRootInOutgoingSourceMap: undefined
     });
 });

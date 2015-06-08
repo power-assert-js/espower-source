@@ -59,7 +59,6 @@ function adjustPathsWithSourceRoot (filepath, sourceRoot) {
         relativePath = filepath;
     }
     return {
-        sourceMapRoot: sourceRoot,
         sourceMap: relativePath
     };
 }
