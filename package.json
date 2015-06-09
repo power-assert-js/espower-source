@@ -73,9 +73,10 @@
   },
   "scripts": {
     "bower": "bower install --config.interactive=false",
-    "build": "gulp bundle",
+    "build": "npm dedupe && gulp bundle && gulp test_bundle",
+    "clean": "gulp clean",
     "lint": "gulp lint",
-    "test": "gulp test",
+    "test": "npm run clean && npm run build && gulp test",
     "unit": "gulp unit"
   }
 }

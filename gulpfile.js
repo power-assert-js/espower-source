@@ -92,7 +92,7 @@ gulp.task('unit', function () {
     return runMochaSimply();
 });
 
-gulp.task('test_browser', ['bundle', 'test_bundle'], function () {
+gulp.task('test_browser', function () {
     return gulp
         .src(config.test.browser)
         .pipe(mochaPhantomJS({reporter: 'dot'}));
