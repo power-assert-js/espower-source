@@ -10,6 +10,7 @@ var path = require('path');
 var glob = require("glob");
 var source = require('vinyl-source-stream');
 var browserify = require('browserify');
+var licensify = require('licensify');
 var derequire = require('gulp-derequire');
 var dereserve = require('gulp-dereserve');
 var config = {
@@ -66,8 +67,9 @@ gulp.task('clean_test_bundle', function (done) {
 });
 
 gulp.task('bundle', ['clean_bundle'], function() {
-    var bundleStream = browserify({entries: config.bundle.srcFile, standalone: config.bundle.standalone}).bundle();
-    return bundleStream
+    var b = browserify({entries: config.bundle.srcFile, standalone: config.bundle.standalone});
+    b.plugin(licensify);
+    return b.bundle()
         .pipe(source(config.bundle.destName))
         .pipe(dereserve())
         .pipe(derequire())
@@ -76,8 +78,9 @@ gulp.task('bundle', ['clean_bundle'], function() {
 
 gulp.task('test_bundle', ['clean_test_bundle'], function() {
     var files = glob.sync(config.test_bundle.srcFile);
-    var bundleStream = browserify({entries: files}).transform('brfs').bundle();
-    return bundleStream
+    var b = browserify({entries: files});
+    b.transform('brfs');
+    return b.bundle()
         .pipe(source(config.test_bundle.destName))
         .pipe(gulp.dest(config.test_bundle.destDir));
 });

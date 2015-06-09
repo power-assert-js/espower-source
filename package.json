@@ -37,6 +37,7 @@
     "gulp-util": "^3.0.5",
     "gulp-webserver": "^0.9.1",
     "jshint-stylish": "^2.0.0",
+    "licensify": "^1.1.0",
     "mocha": "^2.2.5",
     "source-map": "^0.4.2",
     "vinyl-source-stream": "^1.1.0"
