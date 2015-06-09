@@ -45,42 +45,27 @@ function handleIncomingSourceMap (jsCode, options) {
     return inMap;
 }
 
-function adjustPathsWithSourceRoot (filepath, sourceRoot) {
-    var relativePath;
-    if (isAbsolute(filepath)) {
-        relativePath = _path.relative(sourceRoot, filepath);
-        if (relativePath.split(_path.sep).indexOf('..') !== -1) {
-            // if absolute filepath conflicts with sourceRoot, use filepath only.
-            return {
-                sourceMap: filepath
-            };
-        }
-    } else {
-        relativePath = filepath;
+function adjustFilepath (filepath, sourceRoot) {
+    if (!sourceRoot || !isAbsolute(filepath)) {
+        return filepath;
     }
-    return {
-        sourceMap: relativePath
-    };
-}
-
-function generate (modifiedAst, jsCode, filepath, options) {
-    var extra;
-    if (options.sourceRoot) {
-        extra = adjustPathsWithSourceRoot(filepath, options.sourceRoot);
-    } else {
-        extra = { sourceMap: filepath };
+    var relativePath = _path.relative(sourceRoot, filepath);
+    if (relativePath.split(_path.sep).indexOf('..') !== -1) {
+        // if absolute filepath conflicts with sourceRoot, use filepath only.
+        return filepath;
     }
-    var escodegenOptions = extend({
-        sourceContent: jsCode,
-        sourceMapWithCode: true
-    }, extra);
-    return escodegen.generate(modifiedAst, escodegenOptions);
+    return relativePath;
 }
 
 function instrument (jsCode, filepath, options) {
     var jsAst = esprima.parse(jsCode, {tolerant: true, loc: true});
     var modifiedAst = espower(jsAst, options);
-    return generate(modifiedAst, jsCode, filepath, options);
+    var escodegenOptions = extend({
+        sourceMap: adjustFilepath(filepath, options.sourceRoot),
+        sourceContent: jsCode,
+        sourceMapWithCode: true
+    });
+    return escodegen.generate(modifiedAst, escodegenOptions);
 }
 
 function mergeEspowerOptions (options, filepath) {
