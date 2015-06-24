@@ -63,10 +63,7 @@
     "test",
     "testing"
   ],
-  "license": {
-    "type": "MIT",
-    "url": "https://github.com/power-assert-js/espower-source/blob/master/MIT-LICENSE.txt"
-  },
+  "license": "MIT",
   "main": "./index.js",
   "repository": {
     "type": "git",
