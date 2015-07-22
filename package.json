@@ -17,7 +17,7 @@
   "dependencies": {
     "convert-source-map": "^1.1.1",
     "escodegen": "^1.6.1",
-    "espower": "^1.0.4",
+    "espower": "^1.0.6",
     "esprima": "^2.0.0",
     "multi-stage-sourcemap": "^0.2.1",
     "path-is-absolute": "^1.0.0",
