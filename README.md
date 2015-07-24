@@ -42,7 +42,7 @@ API
 |:---------|:--------------|
 | `string` | N/A           |
 
-Original JavaScript source code that is a source of code transformation.
+Original JavaScript source code that is a source of code transformation. If not specified, then `EspowerError` will be thrown.
 
 #### filepath
 

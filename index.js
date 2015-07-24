@@ -77,6 +77,9 @@ function mergeEspowerOptions (options, filepath) {
 }
 
 module.exports = function espowerSource (jsCode, filepath, options) {
+    if (!jsCode) {
+        throw new espower.EspowerError('`jsCode` is not specified', espowerSource);
+    }
     var espowerOptions = mergeEspowerOptions(options, filepath);
     var inMap = handleIncomingSourceMap(jsCode, espowerOptions);
     var instrumented = instrument(jsCode, filepath, espowerOptions);

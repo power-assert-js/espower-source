@@ -1,4 +1,5 @@
 var espowerSource = require('..');
+var espower = require('espower');
 var sourceMap = require('source-map');
 var convert = require('convert-source-map');
 var fs = require('fs');
@@ -264,5 +265,22 @@ describe('incoming code with SourceMap comment', function() {
             assert.deepEqual(this.consumer.originalPositionFor({line:34,column:15}),
                              {source:'/absolute/path/to/coffee_script_test.coffee',line:33,column:4,name:null});
         });
+    });
+});
+
+
+describe('parameter prerequisites', function () {
+    var code = 'var str = "foo";\nvar anotherStr = "bar"\n\nassert.equal(\nstr,\nanotherStr\n);';
+    var filepath = 'relative/original_test.js';
+    var options = {
+        patterns: [
+            'assert.equal(actual, expected, [message])'
+        ]
+    };
+
+    it('throw EspowerError when originalCode is not specified', function () {
+        assert.throws(function () {
+            espowerSource(null, filepath, options);
+        }, espower.EspowerError);
     });
 });
