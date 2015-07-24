@@ -28,7 +28,7 @@ function mergeSourceMap (incomingSourceMap, outgoingSourceMap) {
     return JSON.parse(transfer({fromSourceMap: outgoingSourceMap, toSourceMap: incomingSourceMap}));
 }
 
-function handleIncomingSourceMap (jsCode, options) {
+function handleIncomingSourceMap (originalCode, options) {
     var inMap;
     if (options.sourceMap) {
         if (typeof options.sourceMap === 'string' || options.sourceMap instanceof String) {
@@ -36,7 +36,7 @@ function handleIncomingSourceMap (jsCode, options) {
         }
         inMap = options.sourceMap;
     } else {
-        var commented = convert.fromSource(jsCode);
+        var commented = convert.fromSource(originalCode);
         if (commented) {
             inMap = commented.toObject();
             options.sourceMap = inMap;
@@ -57,12 +57,12 @@ function adjustFilepath (filepath, sourceRoot) {
     return relativePath;
 }
 
-function instrument (jsCode, filepath, options) {
-    var jsAst = esprima.parse(jsCode, {tolerant: true, loc: true});
+function instrument (originalCode, filepath, options) {
+    var jsAst = esprima.parse(originalCode, {tolerant: true, loc: true});
     var modifiedAst = espower(jsAst, options);
     var escodegenOptions = extend({
         sourceMap: adjustFilepath(filepath, options.sourceRoot),
-        sourceContent: jsCode,
+        sourceContent: originalCode,
         sourceMapWithCode: true
     });
     return escodegen.generate(modifiedAst, escodegenOptions);
@@ -76,13 +76,13 @@ function mergeEspowerOptions (options, filepath) {
     });
 }
 
-module.exports = function espowerSource (jsCode, filepath, options) {
-    if (!jsCode) {
-        throw new espower.EspowerError('`jsCode` is not specified', espowerSource);
+module.exports = function espowerSource (originalCode, filepath, options) {
+    if (!originalCode) {
+        throw new espower.EspowerError('`originalCode` is not specified', espowerSource);
     }
     var espowerOptions = mergeEspowerOptions(options, filepath);
-    var inMap = handleIncomingSourceMap(jsCode, espowerOptions);
-    var instrumented = instrument(jsCode, filepath, espowerOptions);
+    var inMap = handleIncomingSourceMap(originalCode, espowerOptions);
+    var instrumented = instrument(originalCode, filepath, espowerOptions);
     var outMap = convert.fromJSON(instrumented.map.toString());
     if (inMap) {
         var mergedRawMap = mergeSourceMap(inMap, outMap.toObject());
