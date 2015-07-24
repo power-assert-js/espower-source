@@ -50,7 +50,7 @@ Original JavaScript source code that is a source of code transformation.
 |:---------|:--------------|
 | `string` | N/A           |
 
-Filepath of `originalCode`. espower-source stores filepath information for later reporting.
+Filepath of `originalCode`. espower-source stores filepath information for later reporting. If not specified, `options.path` will be used.
 
 #### options
 
