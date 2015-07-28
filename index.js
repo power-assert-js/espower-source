@@ -61,11 +61,17 @@ function instrument (originalCode, filepath, options) {
     var jsAst = esprima.parse(originalCode, {tolerant: true, loc: true});
     var modifiedAst = espower(jsAst, options);
     var escodegenOptions = extend({
-        sourceMap: adjustFilepath(filepath, options.sourceRoot),
+        sourceMap: adjustFilepath(filepath || options.path, options.sourceRoot),
         sourceContent: originalCode,
         sourceMapWithCode: true
     });
     return escodegen.generate(modifiedAst, escodegenOptions);
+}
+
+function instrumentWithoutSourceMapOutput (originalCode, options) {
+    var jsAst = esprima.parse(originalCode, {tolerant: true, loc: true});
+    var modifiedAst = espower(jsAst, options);
+    return escodegen.generate(modifiedAst);
 }
 
 function mergeEspowerOptions (options, filepath) {
@@ -82,6 +88,9 @@ module.exports = function espowerSource (originalCode, filepath, options) {
     }
     var espowerOptions = mergeEspowerOptions(options, filepath);
     var inMap = handleIncomingSourceMap(originalCode, espowerOptions);
+    if (!(filepath || espowerOptions.path)) {
+        return instrumentWithoutSourceMapOutput(originalCode, espowerOptions);
+    }
     var instrumented = instrument(originalCode, filepath, espowerOptions);
     var outMap = convert.fromJSON(instrumented.map.toString());
     if (inMap) {
