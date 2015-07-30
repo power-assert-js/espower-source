@@ -52,6 +52,7 @@
     "README.md",
     "gulpfile.js",
     "index.js",
+    "build/espower-source.js",
     "package.json",
     "test"
   ],

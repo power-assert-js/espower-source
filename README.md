@@ -61,6 +61,33 @@ Filepath of `originalCode`. espower-source stores filepath information for later
 Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/power-assert-js/espower#var-options--espowerdefaultoptions)) will be used, but `options.destructive` is set to `true`, and if `options.path` is falsy, `options.path` is set to value of `filepath` argument by espower-source module.
 
 
+INSTALL
+---------------------------------------
+
+### via npm
+
+Install
+
+    $ npm install --save-dev espower-source
+
+#### use espower-source npm module on browser
+
+`espowerSource` function is exported
+
+    <script type="text/javascript" src="./path/to/node_modules/espower-source/build/espower-source.js"></script>
+
+
+### via bower
+
+Install
+
+    $ bower install --save-dev espower-source
+
+Then load (`espowerSource` function is exported)
+
+    <script type="text/javascript" src="./path/to/bower_components/espower-source/build/espower-source.js"></script>
+
+
 AUTHOR
 ---------------------------------------
 * [Takuto Wada](http://github.com/twada)
