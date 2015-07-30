@@ -1,4 +1,5 @@
 var espowerSource = require('..');
+var espower = require('espower');
 var sourceMap = require('source-map');
 var convert = require('convert-source-map');
 var fs = require('fs');
@@ -263,6 +264,109 @@ describe('incoming code with SourceMap comment', function() {
 
             assert.deepEqual(this.consumer.originalPositionFor({line:34,column:15}),
                              {source:'/absolute/path/to/coffee_script_test.coffee',line:33,column:4,name:null});
+        });
+    });
+});
+
+
+describe('parameter prerequisites', function () {
+    var code = 'var str = "foo";\nvar anotherStr = "bar"\n\nassert.equal(\nstr,\nanotherStr\n);';
+    var filepath = 'relative/original_test.js';
+    var options = {
+        patterns: [
+            'assert.equal(actual, expected, [message])'
+        ]
+    };
+
+    it('`originalCode` is mandatory and throw EspowerError when not specified', function () {
+        assert.throws(function () {
+            espowerSource(null, filepath, options);
+        }, espower.EspowerError);
+    });
+
+    it('`filepath` is optional', function () {
+        assert.doesNotThrow(function () {
+            espowerSource(code, null, options);
+        });
+    });
+
+    it('`options` is optional', function () {
+        assert.doesNotThrow(function () {
+            espowerSource(code, filepath, null);
+        });
+    });
+
+    it('does not throw EspowerError when both filepath and options.path are not specified', function () {
+        assert.doesNotThrow(function () {
+            espowerSource(code, null, options);
+        });
+    });
+});
+
+
+describe('when filepath is not specified', function () {
+    describe('neither filepath nor options.path are not specified', function () {
+        beforeEach(function () {
+            var input = fs.readFileSync('test/fixtures/example.js', 'utf8');
+            this.output = espowerSource(input);
+        });
+        it('no filepath and sourcemap in output', function () {
+            var expected = fs.readFileSync('test/expected/example_without_filepath_and_sourcemap.js', 'utf8');
+            assert.equal(this.output + '\n', expected);
+        });
+        it('sourcemap will not be attached', function () {
+            var map = convert.fromSource(this.output);
+            assert(!map);
+        });
+    });
+
+    describe('but options.path is given', function () {
+        beforeEach(function () {
+            var optionsPath = 'test/fixtures/example.js';
+            var input = fs.readFileSync('test/fixtures/example.js', 'utf8');
+            this.output = espowerSource(input, null, { path: optionsPath });
+        });
+        it('filepath in output', function () {
+            var expected = fs.readFileSync('test/expected/example.js', 'utf8');
+            assert.equal(this.output, expected);
+        });
+        it('sourcemap will be attached', function () {
+            var map = convert.fromSource(this.output);
+            assert(map);
+        });
+    });
+
+    describe('and options.path is not specified but inlined sourcemap is given', function () {
+        beforeEach(function () {
+            var input = fs.readFileSync('test/fixtures/with-sourcemap.js', 'utf8');
+            this.output = espowerSource(input);
+        });
+        it('filepath in output', function () {
+            var expectedWithSourceMap = fs.readFileSync('test/expected/with-sourcemap.js', 'utf8');
+            var expected = convert.removeComments(expectedWithSourceMap);
+            assert.equal(this.output + '\n\n', expected);
+        });
+        it('sourcemap will not be attached', function () {
+            var map = convert.fromSource(this.output);
+            assert(!map);
+        });
+    });
+
+    describe('and options.path is not specified but options.sourceMap is given', function () {
+        beforeEach(function () {
+            var input = fs.readFileSync('test/fixtures/with-sourcemap.js', 'utf8');
+            var sourceMapComment = convert.fromSource(input);
+            var bareCode = convert.removeComments(input);
+            this.output = espowerSource(bareCode, null, { sourceMap: sourceMapComment.toObject() });
+        });
+        it('filepath in output', function () {
+            var expectedWithSourceMap = fs.readFileSync('test/expected/with-sourcemap.js', 'utf8');
+            var expected = convert.removeComments(expectedWithSourceMap);
+            assert.equal(this.output + '\n\n', expected);
+        });
+        it('sourcemap will not be attached', function () {
+            var map = convert.fromSource(this.output);
+            assert(!map);
         });
     });
 });

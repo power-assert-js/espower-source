@@ -28,7 +28,7 @@ See [CHANGELOG](https://github.com/power-assert-js/espower-source/blob/master/CH
 API
 ---------------------------------------
 
-### var modifiedCode = espowerSource(originalCode, filepath, [options])
+### var modifiedCode = espowerSource(originalCode, [filepath], [options])
 
 | return type |
 |:------------|
@@ -42,23 +42,23 @@ API
 |:---------|:--------------|
 | `string` | N/A           |
 
-Original JavaScript source code that is a source of code transformation.
+Original JavaScript source code that is a source of code transformation. If not specified, then `EspowerError` will be thrown.
 
-#### filepath
+#### filepath (optional but recommended)
 
 | type     | default value |
 |:---------|:--------------|
 | `string` | N/A           |
 
-Filepath of `originalCode`. If passed, espowerSource stores filepath information for later reporting.
+Filepath of `originalCode`. espower-source stores filepath information for later reporting. If not specified, `options.path` will be used. If neither filepath nor options.path are not specified, espower-source transforms code as usual but SourceMap will not be generated and attached.
 
-#### options
+#### options (optional)
 
 | type     | default value |
 |:---------|:--------------|
 | `object` | (return value of `espower.defaultOptions()` but with `destructive` option is `true`) |
 
-Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/power-assert-js/espower#var-options--espowerdefaultoptions)) will be used, but `destructive` option is set to `true` by espower-source module.
+Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/power-assert-js/espower#var-options--espowerdefaultoptions)) will be used, but `options.destructive` is set to `true`, and if `options.path` is falsy, `options.path` is set to value of `filepath` argument by espower-source module.
 
 
 AUTHOR
