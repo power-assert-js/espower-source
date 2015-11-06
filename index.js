@@ -10,7 +10,8 @@
 'use strict';
 
 var espower = require('espower');
-var esprima = require('esprima');
+var acorn = require('acorn');
+require('acorn-es7-plugin')(acorn);
 var escodegen = require('escodegen');
 var extend = require('xtend');
 var convert = require('convert-source-map');
@@ -73,7 +74,7 @@ function adjustFilepath (filepath, sourceRoot) {
 }
 
 function instrument (originalCode, filepath, options) {
-    var jsAst = esprima.parse(originalCode, {tolerant: true, loc: true});
+    var jsAst = acorn.parse(originalCode, {locations: true, ecmaVersion:7, plugins: {asyncawait: true}});
     var modifiedAst = espower(jsAst, options);
     var escodegenOptions = extend({
         sourceMap: adjustFilepath(filepath || options.path, options.sourceRoot),
@@ -84,7 +85,7 @@ function instrument (originalCode, filepath, options) {
 }
 
 function instrumentWithoutSourceMapOutput (originalCode, options) {
-    var jsAst = esprima.parse(originalCode, {tolerant: true, loc: true});
+    var jsAst = acorn.parse(originalCode, {locations: true, ecmaVersion:7, plugins: {asyncawait: true}});
     var modifiedAst = espower(jsAst, options);
     return escodegen.generate(modifiedAst);
 }

@@ -1,5 +1,6 @@
 var espowerSource = require('..');
-var esprima = require('esprima');
+var acorn = require('acorn');
+require('acorn-es7-plugin')(acorn);
 var escodegen = require('escodegen');
 var sourceMap = require('source-map');
 var convert = require('convert-source-map');
@@ -11,7 +12,7 @@ describe('incoming SourceMap support', function () {
     function withIncomingInlineSourceMap(testName, config) {
         it(testName + ' with inline SourceMap: ' + config.inlineSourceMap, function () {
             var originalCode = 'var str = "foo";\nvar anotherStr = "bar"\n\nassert.equal(\nstr,\nanotherStr\n);';
-            var incomingCodeAndMap = escodegen.generate(esprima.parse(originalCode, {tolerant: true, loc: true, source: config.incomingFilepath}), {
+            var incomingCodeAndMap = escodegen.generate(acorn.parse(originalCode, {locations: true, sourceFile: config.incomingFilepath, plugins: {asyncawait:true}}), {
                 format: {
                     compact: true
                 },
@@ -40,7 +41,7 @@ describe('incoming SourceMap support', function () {
             }
             var intermediateFilepath = '/path/to/absolute/intermediate/transformed_test.js';
             var result = espowerSource(incomingCode, intermediateFilepath, espowerOptions);
-            var compactCode = escodegen.generate(esprima.parse(convert.removeComments(result)), {format: {compact: true}});
+            var compactCode = escodegen.generate(acorn.parse(convert.removeComments(result), {plugins: {asyncawait: true}}), {format: {compact: true}});
 
             assert.equal(compactCode, "var str='foo';var anotherStr='bar';assert.equal(assert._expr(assert._capt(str,'arguments/0'),{content:'assert.equal(str, anotherStr)',filepath:'" + config.filepathInGeneratedCode + "',line:4}),assert._expr(assert._capt(anotherStr,'arguments/1'),{content:'assert.equal(str, anotherStr)',filepath:'" + config.filepathInGeneratedCode + "',line:4}));");
 
@@ -160,7 +161,7 @@ describe('without incoming SourceMap', function () {
             }
 
             var result = espowerSource(originalCode, config.incomingFilepath, espowerOptions);
-            var compactCode = escodegen.generate(esprima.parse(convert.removeComments(result)), {format: {compact: true}});
+            var compactCode = escodegen.generate(acorn.parse(convert.removeComments(result), {plugins: {asyncawait: true}}), {format: {compact: true}});
 
             assert.equal(compactCode, "var str='foo';var anotherStr='bar';assert.equal(assert._expr(assert._capt(str,'arguments/0'),{content:'assert.equal(str, anotherStr)',filepath:'" + config.filepathInGeneratedCode + "',line:4}),assert._expr(assert._capt(anotherStr,'arguments/1'),{content:'assert.equal(str, anotherStr)',filepath:'" + config.filepathInGeneratedCode + "',line:4}));", 'filepathInGeneratedCode');
 
