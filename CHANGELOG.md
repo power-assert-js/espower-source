@@ -1,3 +1,11 @@
+## [1.1.0](https://github.com/power-assert-js/espower-source/releases/tag/v1.1.0) (2015-11-09)
+
+
+#### Features
+
+* [add async-await support](https://github.com/power-assert-js/espower-source/pull/8) (by [@jamestalmage](https://github.com/jamestalmage))
+
+
 ## [1.0.0](https://github.com/power-assert-js/espower-source/releases/tag/v1.0.0) (2015-08-08)
 
 
