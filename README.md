@@ -96,6 +96,7 @@ AUTHOR
 CONTRIBUTORS
 ---------------------------------------
 * [azu](https://github.com/azu)
+* [James Talmage (jamestalmage)](https://github.com/jamestalmage)
 
 
 LICENSE

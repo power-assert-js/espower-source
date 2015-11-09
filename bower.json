@@ -25,6 +25,10 @@
     {
       "name": "azu",
       "url": "https://github.com/azu"
+    },
+    {
+      "name": "James Talmage",
+      "homepage": "https://github.com/jamestalmage"
     }
   ],
   "homepage": "https://github.com/power-assert-js/espower-source",
