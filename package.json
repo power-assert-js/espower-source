@@ -19,7 +19,7 @@
     }
   ],
   "dependencies": {
-    "acorn": "^2.5.2",
+    "acorn": ">=2.5.2 <2.6.0",
     "acorn-es7-plugin": "^1.0.9",
     "convert-source-map": "^1.1.1",
     "escodegen": "^1.6.1",
