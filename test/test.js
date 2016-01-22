@@ -370,3 +370,17 @@ describe('when filepath is not specified', function () {
         });
     });
 });
+
+
+describe('empty and blank files', function() {
+    it('when file content is empty', function() {
+        var output = espowerSource('', 'path/to/test.js');
+        assert.equal(typeof output, 'string');
+        assert.equal(output, '\n//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiJ9\n');
+    });
+    it('when file content is blank', function() {
+        var output = espowerSource('  \n  \n', 'path/to/test.js');
+        assert.equal(typeof output, 'string');
+        assert.equal(output, '\n//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsInNvdXJjZXNDb250ZW50IjpbXX0=\n');
+    });
+});

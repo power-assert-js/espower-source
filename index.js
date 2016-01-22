@@ -99,7 +99,7 @@ function mergeEspowerOptions (options, filepath) {
 }
 
 module.exports = function espowerSource (originalCode, filepath, options) {
-    if (!originalCode) {
+    if (typeof originalCode === 'undefined' || originalCode === null) {
         throw new espower.EspowerError('`originalCode` is not specified', espowerSource);
     }
     var espowerOptions = mergeEspowerOptions(options, filepath);
