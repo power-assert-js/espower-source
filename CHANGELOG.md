@@ -1,4 +1,9 @@
-## [1.1.0](https://github.com/power-assert-js/espower-source/releases/tag/v1.1.0) (2015-11-09)
+## [1.1.0](https://github.com/power-assert-js/espower-source/releases/tag/v1.1.0) (2016-01-22)
+
+
+#### Bug Fixes
+
+* relax too strict originalCode checking ([458ef9f1](https://github.com/power-assert-js/espower-source/commit/458ef9f1e916e3496945f046bafd36497c08fe10))
 
 
 #### Features
