@@ -13,11 +13,11 @@ Power Assert instrumentor from code to code, with SourceMap.
 
 DESCRIPTION
 ---------------------------------------
-`espower-source` is a source code transformer that applies [espower](http://github.com/power-assert-js/espower) to target code.
+`espower-source` is a source code transformer that applies [espower](https://github.com/power-assert-js/espower) to target code.
 
 `espower` manipulates assertion expression in the form of ECMAScript AST defined in [The ESTree Spec](https://github.com/estree/estree) (formerly known as [Mozilla SpiderMonkey Parser API](https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API)), to instrument power-assert feature into the code. SourceMap information is appended in SourceMap Comment syntax at the end of returned code.
 
-Pull-requests, issue reports and patches are always welcomed. See [power-assert](http://github.com/power-assert-js/power-assert) project for more documentation.
+Pull-requests, issue reports and patches are always welcomed. See [power-assert](https://github.com/power-assert-js/power-assert) project for more documentation.
 
 
 CHANGELOG
@@ -90,7 +90,7 @@ Then load (`espowerSource` function is exported)
 
 AUTHOR
 ---------------------------------------
-* [Takuto Wada](http://github.com/twada)
+* [Takuto Wada](https://github.com/twada)
 
 
 CONTRIBUTORS
@@ -107,14 +107,14 @@ Licensed under the [MIT](https://github.com/power-assert-js/espower-source/blob/
 [npm-url]: https://npmjs.org/package/espower-source
 [npm-image]: https://badge.fury.io/js/espower-source.svg
 
-[bower-url]: http://badge.fury.io/bo/espower-source
+[bower-url]: https://badge.fury.io/bo/espower-source
 [bower-image]: https://badge.fury.io/bo/espower-source.svg
 
-[travis-url]: http://travis-ci.org/power-assert-js/espower-source
+[travis-url]: https://travis-ci.org/power-assert-js/espower-source
 [travis-image]: https://secure.travis-ci.org/power-assert-js/espower-source.svg?branch=master
 
 [depstat-url]: https://gemnasium.com/power-assert-js/espower-source
 [depstat-image]: https://gemnasium.com/power-assert-js/espower-source.svg
 
 [license-url]: https://github.com/power-assert-js/espower-source/blob/master/MIT-LICENSE.txt
-[license-image]: http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
+[license-image]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
