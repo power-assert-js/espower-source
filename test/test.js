@@ -384,3 +384,35 @@ describe('empty and blank files', function() {
         assert.equal(output, '\n//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsInNvdXJjZXNDb250ZW50IjpbXX0=\n');
     });
 });
+
+describe('syntax error handling', function() {
+    var source = [
+        "var a = 1;",
+        "var b = 2;",
+        "var c = 3;",
+        "", // test empty line
+        "var e = 5;",
+        "var f = 6;",
+        "syntax error at line 7",
+        "var g = 8;",
+        "var h = 9;",
+        "var i = 10;",
+        "var j = 11;",
+        "var k = 12;",
+        "var l = 13;"].join('\n');
+
+    it('can generate SyntaxError with custom message with 10 lines surrounding the line', function() {
+        var error;
+        try {
+            espowerSource(source, "dummy.js");
+        } catch(e) {
+            error = e;
+        }
+        assert(error instanceof SyntaxError);
+        assert.notEqual(error.message.indexOf('     2: var b = 2;'), -1);
+        assert.notEqual(error.message.indexOf('     4: '), -1);
+        assert.notEqual(error.message.indexOf('     7: syntax error at line 7'), -1);
+        assert.notEqual(error.message.indexOf('       ^'), -1);
+        assert.notEqual(error.message.indexOf('    12: var k = 12;'), -1);
+    });
+});
