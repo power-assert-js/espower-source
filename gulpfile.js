@@ -58,12 +58,12 @@ gulp.task('watch', function () {
     runMochaSimply();
 });
 
-gulp.task('clean_bundle', function (done) {
-    del([path.join(config.bundle.destDir, config.bundle.destName)], done);
+gulp.task('clean_bundle', function () {
+    del.sync([path.join(config.bundle.destDir, config.bundle.destName)]);
 });
 
-gulp.task('clean_test_bundle', function (done) {
-    del([path.join(config.test_bundle.destDir, config.test_bundle.destName)], done);
+gulp.task('clean_test_bundle', function () {
+    del.sync([path.join(config.test_bundle.destDir, config.test_bundle.destName)]);
 });
 
 gulp.task('bundle', ['clean_bundle'], function() {
