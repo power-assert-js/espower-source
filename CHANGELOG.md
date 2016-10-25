@@ -1,3 +1,11 @@
+## [1.2.0](https://github.com/power-assert-js/espower-source/releases/tag/v1.2.0) (2016-10-25)
+
+
+#### Features
+
+* [show SyntaxError detail](https://github.com/power-assert-js/espower-source/pull/10) (by [@shibukawa](https://github.com/shibukawa))
+
+
 ## [1.1.0](https://github.com/power-assert-js/espower-source/releases/tag/v1.1.0) (2016-01-22)
 
 
