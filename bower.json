@@ -29,6 +29,10 @@
     {
       "name": "James Talmage",
       "homepage": "https://github.com/jamestalmage"
+    },
+    {
+      "name": "Yoshiki Shibukawa",
+      "homepage": "https://github.com/shibukawa"
     }
   ],
   "homepage": "https://github.com/power-assert-js/espower-source",

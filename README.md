@@ -97,6 +97,7 @@ CONTRIBUTORS
 ---------------------------------------
 * [azu](https://github.com/azu)
 * [James Talmage (jamestalmage)](https://github.com/jamestalmage)
+* [Yoshiki Shibukawa (shibukawa)](https://github.com/shibukawa)
 
 
 LICENSE

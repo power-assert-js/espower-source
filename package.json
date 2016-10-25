@@ -16,6 +16,10 @@
     {
       "name": "James Talmage",
       "url": "https://github.com/jamestalmage"
+    },
+    {
+      "name": "Yoshiki Shibukawa",
+      "homepage": "https://github.com/shibukawa"
     }
   ],
   "dependencies": {
