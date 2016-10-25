@@ -80,6 +80,8 @@
     "url": "git://github.com/power-assert-js/espower-source.git"
   },
   "scripts": {
+    "preversion": "npm test",
+    "version": "gulp bundle && git add -A build/espower-source.js",
     "bower": "bower install --config.interactive=false",
     "build": "npm dedupe && gulp bundle && gulp test_bundle",
     "clean": "gulp clean",
