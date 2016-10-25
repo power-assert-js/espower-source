@@ -7,7 +7,7 @@
  *   author: Takuto Wada <takuto.wada@gmail.com>
  *   contributors: azu, James Talmage, Yoshiki Shibukawa
  *   homepage: https://github.com/power-assert-js/espower-source
- *   version: 1.1.0
+ *   version: 1.2.0
  *
  * acorn:
  *   license: MIT (http://opensource.org/licenses/MIT)
