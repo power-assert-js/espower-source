@@ -11,6 +11,7 @@ var glob = require("glob");
 var source = require('vinyl-source-stream');
 var browserify = require('browserify');
 var licensify = require('licensify');
+var packageJsonVersionify = require('package-json-versionify');
 var derequire = require('gulp-derequire');
 var dereserve = require('gulp-dereserve');
 var config = {
@@ -69,6 +70,7 @@ gulp.task('clean_test_bundle', function () {
 gulp.task('bundle', ['clean_bundle'], function() {
     var b = browserify({entries: config.bundle.srcFile, standalone: config.bundle.standalone});
     b.plugin(licensify);
+    b.transform(packageJsonVersionify, {global: true});
     return b.bundle()
         .pipe(source(config.bundle.destName))
         .pipe(dereserve())

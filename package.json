@@ -49,6 +49,7 @@
     "jshint-stylish": "^2.0.1",
     "licensify": "^3.1.2",
     "mocha": "^3.1.2",
+    "package-json-versionify": "^1.0.2",
     "source-map": "^0.5.6",
     "vinyl-source-stream": "^1.1.0"
   },
