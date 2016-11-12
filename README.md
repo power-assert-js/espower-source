@@ -3,7 +3,6 @@ espower-source
 
 [![Build Status][travis-image]][travis-url]
 [![NPM package][npm-image]][npm-url]
-[![Bower package][bower-image]][bower-url]
 [![Dependency Status][depstat-image]][depstat-url]
 [![License][license-image]][license-url]
 
@@ -70,22 +69,15 @@ Install
 
     $ npm install --save-dev espower-source
 
-#### use espower-source npm module on browser
 
-`espowerSource` function is exported
+OUR SUPPORT POLICY
+---------------------------------------
 
-    <script type="text/javascript" src="./path/to/node_modules/espower-source/build/espower-source.js"></script>
+We support Node under maintenance. In other words, we stop supporting old Node version when [their maintenance ends](https://github.com/nodejs/LTS).
 
+This means that any other environment is not supported.
 
-### via bower
-
-Install
-
-    $ bower install --save-dev espower-source
-
-Then load (`espowerSource` function is exported)
-
-    <script type="text/javascript" src="./path/to/bower_components/espower-source/build/espower-source.js"></script>
+NOTE: If espower-source works in any of the unsupported environments, it is purely coincidental and has no bearing on future compatibility. Use at your own risk.
 
 
 AUTHOR
@@ -107,9 +99,6 @@ Licensed under the [MIT](https://github.com/power-assert-js/espower-source/blob/
 
 [npm-url]: https://npmjs.org/package/espower-source
 [npm-image]: https://badge.fury.io/js/espower-source.svg
-
-[bower-url]: https://badge.fury.io/bo/espower-source
-[bower-image]: https://badge.fury.io/bo/espower-source.svg
 
 [travis-url]: https://travis-ci.org/power-assert-js/espower-source
 [travis-image]: https://secure.travis-ci.org/power-assert-js/espower-source.svg?branch=master
