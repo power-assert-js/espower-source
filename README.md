@@ -3,7 +3,6 @@ espower-source
 
 [![Build Status][travis-image]][travis-url]
 [![NPM package][npm-image]][npm-url]
-[![Bower package][bower-image]][bower-url]
 [![Dependency Status][depstat-image]][depstat-url]
 [![License][license-image]][license-url]
 
@@ -70,23 +69,6 @@ Install
 
     $ npm install --save-dev espower-source
 
-#### use espower-source npm module on browser
-
-`espowerSource` function is exported
-
-    <script type="text/javascript" src="./path/to/node_modules/espower-source/build/espower-source.js"></script>
-
-
-### via bower
-
-Install
-
-    $ bower install --save-dev espower-source
-
-Then load (`espowerSource` function is exported)
-
-    <script type="text/javascript" src="./path/to/bower_components/espower-source/build/espower-source.js"></script>
-
 
 AUTHOR
 ---------------------------------------
@@ -107,9 +89,6 @@ Licensed under the [MIT](https://github.com/power-assert-js/espower-source/blob/
 
 [npm-url]: https://npmjs.org/package/espower-source
 [npm-image]: https://badge.fury.io/js/espower-source.svg
-
-[bower-url]: https://badge.fury.io/bo/espower-source
-[bower-image]: https://badge.fury.io/bo/espower-source.svg
 
 [travis-url]: https://travis-ci.org/power-assert-js/espower-source
 [travis-image]: https://secure.travis-ci.org/power-assert-js/espower-source.svg?branch=master
