@@ -12,6 +12,9 @@
 var espower = require('espower');
 var acorn = require('acorn');
 require('acorn-es7-plugin')(acorn);
+var estraverse = require('estraverse');
+var mergeVisitors = require('merge-estraverse-visitors');
+var empowerAssert = require('empower-assert');
 var escodegen = require('escodegen');
 var extend = require('xtend');
 var convert = require('convert-source-map');
@@ -154,7 +157,12 @@ function instrument (originalCode, filepath, options) {
         }
         throw e;
     }
-    var modifiedAst = espower(jsAst, options);
+    var modifiedAst = estraverse.replace(jsAst, mergeVisitors([
+        {
+            enter: empowerAssert.enter
+        },
+        espower.createVisitor(jsAst, options)
+    ]));
     var escodegenOptions = extend({
         sourceMap: adjustFilepath(filepath || options.path, options.sourceRoot),
         sourceContent: originalCode,
@@ -173,16 +181,19 @@ function instrumentWithoutSourceMapOutput (originalCode, options) {
         }
         throw e;
     }
-    var modifiedAst = espower(jsAst, options);
+    var modifiedAst = estraverse.replace(jsAst, mergeVisitors([
+        {
+            enter: empowerAssert.enter
+        },
+        espower.createVisitor(jsAst, options)
+    ]));
     return escodegen.generate(modifiedAst);
 }
 
 function mergeEspowerOptions (options, filepath) {
     return extend(espower.defaultOptions(), {
         path: filepath
-    }, options, {
-        destructive: true
-    });
+    }, options);
 }
 
 module.exports = function espowerSource (originalCode, filepath, options) {
