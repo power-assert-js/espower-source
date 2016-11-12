@@ -1,3 +1,20 @@
+## [2.0.0](https://github.com/power-assert-js/espower-source/releases/tag/v2.0.0) (2016-11-12)
+
+
+#### Features
+
+* [Integrate `empower-assert` to enable transparent assertion enhancement](https://github.com/power-assert-js/espower-source/pull/11)
+* Embed value capturing helper into transpiled code (by upgrading espower to 2.0.0) ([78a57687](https://github.com/power-assert-js/espower-source/commit/78a57687b142ae99a0eae3566042a1467c016b1e))
+
+
+#### Breaking Changes
+
+* [Drop support for prebuilt bundle, bower, and Node v0.10](https://github.com/power-assert-js/espower-source/pull/12)
+
+We stopped providing prebuilt bundle for browsers. Please build your own by using browserify, webpack and so on.
+We also dropped bower support. Please use npm instead.
+
+
 ## [1.2.0](https://github.com/power-assert-js/espower-source/releases/tag/v1.2.0) (2016-10-25)
 
 
