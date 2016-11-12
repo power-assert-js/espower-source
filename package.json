@@ -29,7 +29,7 @@
     "empower-assert": "^1.0.0",
     "escodegen": "^1.6.1",
     "espower": "^2.0.0",
-    "estraverse": "^4.2.0",
+    "estraverse": "^4.0.0",
     "merge-estraverse-visitors": "^1.0.0",
     "multi-stage-sourcemap": "^0.2.1",
     "path-is-absolute": "^1.0.0",
