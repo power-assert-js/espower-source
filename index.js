@@ -1,6 +1,6 @@
 /**
  * espower-source - Power Assert instrumentor from source to source.
- * 
+ *
  * https://github.com/power-assert-js/espower-source
  *
  * Copyright (c) 2014-2016 Takuto Wada
@@ -150,7 +150,7 @@ function showSyntaxErrorDetail(code, error, filepath) {
 function instrument (originalCode, filepath, options) {
     var jsAst;
     try {
-        jsAst = acorn.parse(originalCode, {locations: true, ecmaVersion:7, plugins: {asyncawait: true}});
+        jsAst = acorn.parse(originalCode, {locations: true, ecmaVersion: 2017, plugins: {asyncawait: true}});
     } catch (e) {
         if (e instanceof SyntaxError && e.pos && e.loc) {
             showSyntaxErrorDetail(originalCode, e, filepath);
@@ -174,7 +174,7 @@ function instrument (originalCode, filepath, options) {
 function instrumentWithoutSourceMapOutput (originalCode, options) {
     var jsAst;
     try {
-        jsAst = acorn.parse(originalCode, {locations: true, ecmaVersion:7, plugins: {asyncawait: true}});
+        jsAst = acorn.parse(originalCode, {locations: true, ecmaVersion: 2017, plugins: {asyncawait: true}});
     } catch (e) {
         if (e instanceof SyntaxError && e.pos && e.loc) {
             showSyntaxErrorDetail(originalCode, e);
