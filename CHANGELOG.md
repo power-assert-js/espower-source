@@ -1,3 +1,11 @@
+### [2.0.1](https://github.com/power-assert-js/espower-source/releases/tag/v2.0.1) (2017-02-13)
+
+
+#### Bug Fixes
+
+* [fix: ecmaVersion 7 => 2017 to support async await](https://github.com/power-assert-js/espower-source/pull/13) by [@dead-horse](https://github.com/dead-horse)
+
+
 ## [2.0.0](https://github.com/power-assert-js/espower-source/releases/tag/v2.0.0) (2016-11-12)
 
 
