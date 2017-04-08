@@ -280,6 +280,100 @@ describe('incoming code with SourceMap comment', function() {
     });
 });
 
+describe('incoming code with file SourceMap comment', function() {
+    beforeEach(function () {
+        this.path = 'test/fixtures/with-file-sourcemap.js';
+        this.input = fs.readFileSync('test/fixtures/with-file-sourcemap.js', 'utf8'),
+        this.output = espowerSource(this.input, this.path);
+        this.map = convert.fromSource(this.output).toObject();
+    });
+
+    it('should transform source', function() {
+        var expected = fs.readFileSync('test/expected/with-file-sourcemap.js', 'utf8');
+        assert.equal(this.output, expected);
+    });
+
+    it('sourcesContent', function () {
+        assert.deepEqual(this.map.sourcesContent, [
+            [
+                'assert = require \'power-assert\'',
+                '',
+                'class Person',
+                '  constructor: (name, age) ->',
+                '    @name = name',
+                '    @age = age',
+                '',
+                'describe "various types", ->',
+                '  beforeEach ->',
+                '    @types = [',
+                '      "string"',
+                '      98.6',
+                '      true',
+                '      false',
+                '      null',
+                '      `undefined`',
+                '      [',
+                '        "nested"',
+                '        "array"',
+                '      ]',
+                '      {',
+                '        object: true',
+                '      }',
+                '      NaN',
+                '      Infinity',
+                '      /^not/',
+                '      new Person("alice", 3)',
+                '    ]',
+                '',
+                '  it "demo", ->',
+                '    index = @types.length - 1',
+                '    bob = new Person("bob", 5)',
+                '    assert @types[index].name is bob.name',
+                ''
+            ].join('\n')
+        ]);
+    });
+
+    describe('consuming generated sourceMap', function () {
+        beforeEach(function () {
+            this.consumer = new sourceMap.SourceMapConsumer(this.map);
+            var mappings = [];
+            this.consumer.eachMapping(function (mapping) {
+                mappings.push(mapping);
+            });
+            this.mappings = mappings;
+        });
+        it('mapping count', function () {
+            assert.equal(this.mappings.length, 320);
+        });
+        it('mapping with names', function () {
+            var withNames = this.mappings.filter(function (mapping) { return mapping.name; });
+            assert.equal(withNames.length, 0);
+        });
+        it('originalPosition', function () {
+            // name
+            assert.deepEqual(this.consumer.generatedPositionFor({
+                source:'with-file-sourcemap.coffee',
+                line:4,
+                column:16
+            }), {
+                line:28,
+                column:20,
+                lastColumn: null
+            });
+
+            assert.deepEqual(this.consumer.originalPositionFor({line:28,column:4}),
+                             {source:'with-file-sourcemap.coffee',line:4,column:15,name:null});
+
+            assert.deepEqual(this.consumer.originalPositionFor({line:56,column:8}),
+                             {source:'with-file-sourcemap.coffee',line:31,column:4,name:null});
+
+            assert.deepEqual(this.consumer.originalPositionFor({line:59,column:15}),
+                             {source:'with-file-sourcemap.coffee',line:33,column:4,name:null});
+        });
+    });
+});
+
 
 describe('parameter prerequisites', function () {
     var code = 'var str = "foo";\nvar anotherStr = "bar"\n\nassert.equal(\nstr,\nanotherStr\n);';
@@ -388,12 +482,12 @@ describe('empty and blank files', function() {
     it('when file content is empty', function() {
         var output = espowerSource('', 'path/to/test.js');
         assert.equal(typeof output, 'string');
-        assert.equal(output, '\n//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiJ9\n');
+        assert.equal(output, '\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiJ9\n');
     });
     it('when file content is blank', function() {
         var output = espowerSource('  \n  \n', 'path/to/test.js');
         assert.equal(typeof output, 'string');
-        assert.equal(output, '\n//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsInNvdXJjZXNDb250ZW50IjpbXX0=\n');
+        assert.equal(output, '\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsInNvdXJjZXNDb250ZW50IjpbXX0=\n');
     });
 });
 
