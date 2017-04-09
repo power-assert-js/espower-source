@@ -1,3 +1,11 @@
+## [2.1.0](https://github.com/power-assert-js/espower-source/releases/tag/v2.1.0) (2017-04-09)
+
+
+#### Features
+
+* [support file SourceMap](https://github.com/power-assert-js/espower-source/pull/14) by [@shepherdwind](https://github.com/shepherdwind)
+
+
 ### [2.0.1](https://github.com/power-assert-js/espower-source/releases/tag/v2.0.1) (2017-02-13)
 
 
