@@ -91,6 +91,7 @@ CONTRIBUTORS
 * [James Talmage (jamestalmage)](https://github.com/jamestalmage)
 * [Yoshiki Shibukawa (shibukawa)](https://github.com/shibukawa)
 * [Yiyu He (dead-horse)](https://github.com/dead-horse)
+* [Eward Song (shepherdwind)](https://github.com/shepherdwind)
 
 
 LICENSE
