@@ -81,8 +81,12 @@ function retrieveSourceMapURL(source) {
     // Keep executing the search to find the *last* sourceMappingURL to avoid
     // picking up sourceMappingURLs from comments, strings, etc.
     var lastMatch, match;
-    while (match = re.exec(source)) lastMatch = match;
-    if (!lastMatch) return null;
+    while (match = re.exec(source)) {
+        lastMatch = match;
+    }
+    if (!lastMatch) {
+        return null;
+    }
     return lastMatch[1];
 };
 
