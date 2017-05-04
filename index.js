@@ -95,12 +95,7 @@ function adjustFilepath (filepath, sourceRoot) {
     if (!sourceRoot || !isAbsolute(filepath)) {
         return filepath;
     }
-    var relativePath = _path.relative(sourceRoot, filepath);
-    if (relativePath.split(_path.sep).indexOf('..') !== -1) {
-        // if absolute filepath conflicts with sourceRoot, use filepath only.
-        return filepath;
-    }
-    return relativePath;
+    return _path.relative(sourceRoot, filepath);
 }
 
 function syntaxErrorLine(lineNumber, maxLineNumberLength, line) {
@@ -195,6 +190,9 @@ function instrument (originalCode, filepath, options) {
         sourceContent: originalCode,
         sourceMapWithCode: true
     });
+    if (options.sourceRoot) {
+        escodegenOptions.sourceMapRoot = options.sourceRoot;
+    }
     return escodegen.generate(modifiedAst, escodegenOptions);
 }
 
