@@ -31,7 +31,7 @@
     }
   ],
   "dependencies": {
-    "acorn": "^4.0.0",
+    "acorn": "^5.0.0",
     "acorn-es7-plugin": "^1.0.10",
     "convert-source-map": "^1.1.1",
     "empower-assert": "^1.0.0",
