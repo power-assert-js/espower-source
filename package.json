@@ -46,7 +46,7 @@
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-jshint": "^2.0.2",
-    "gulp-mocha": "^3.0.1",
+    "gulp-mocha": "^4.3.1",
     "gulp-util": "^3.0.6",
     "jshint": "^2.9.4",
     "jshint-stylish": "^2.0.1",
