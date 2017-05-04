@@ -60,6 +60,24 @@ Filepath of `originalCode`. espower-source stores filepath information for later
 Configuration options for `espower` module. If not passed, default options (Same as [espower.defaultOptions()](https://github.com/power-assert-js/espower#var-options--espowerdefaultoptions)) will be used, but `options.destructive` is set to `true`, and if `options.path` is falsy, `options.path` is set to value of `filepath` argument by espower-source module.
 
 
+#### options.ecmaVersion
+
+| type     | default value |
+|:---------|:--------------|
+| `number` | `2017`        |
+
+The ECMAScript version to parse and analyze. Must be either 3, 5, 6 (2015), 2016, or 2017.
+
+
+#### options.sourceType
+
+| type     | default value |
+|:---------|:--------------|
+| `string` | `'module'`    |
+
+The source type of the code. Must be either `"script"` or `"module"`.
+
+
 INSTALL
 ---------------------------------------
 
