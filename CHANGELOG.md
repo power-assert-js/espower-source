@@ -1,3 +1,12 @@
+## [2.2.0](https://github.com/power-assert-js/espower-source/releases/tag/v2.2.0) (2017-05-05)
+
+
+#### Features
+
+* [add `ecmaVersion` and `sourceType` to options](https://github.com/power-assert-js/espower-source/pull/17)
+* [add `sourceRoot` property to generated SourceMap](https://github.com/power-assert-js/espower-source/pull/18)
+
+
 ## [2.1.0](https://github.com/power-assert-js/espower-source/releases/tag/v2.1.0) (2017-04-09)
 
 
