@@ -64,9 +64,9 @@ Configuration options for `espower` module. If not passed, default options (Same
 
 | type     | default value |
 |:---------|:--------------|
-| `number` | `2017`        |
+| `number` | `2018`        |
 
-The ECMAScript version to parse and analyze. Must be either 3, 5, 6 (2015), 2016, or 2017.
+The ECMAScript version to parse and analyze. Must be either 3, 5, 6 (2015), 2016, 2017, or 2018.
 
 
 #### options.sourceType
