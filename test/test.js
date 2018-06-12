@@ -522,3 +522,20 @@ describe('syntax error handling', function() {
         assert.notEqual(error.message.indexOf('    12: var k = 12;'), -1);
     });
 });
+
+
+describe('ES2018 syntax', function() {
+    beforeEach(function () {
+        this.path = 'test/fixtures/es2018.js';
+        this.input = fs.readFileSync('test/fixtures/es2018.js', 'utf8'),
+        this.output = espowerSource(this.input, this.path);
+        this.map = convert.fromSource(this.output).toObject();
+    });
+    it('should return a string', function() {
+        assert.equal(typeof this.output, 'string');
+    });
+    it('should transform source', function() {
+        var expected = fs.readFileSync('test/expected/es2018.js', 'utf8');
+        assert.equal(this.output, expected);
+    });
+});

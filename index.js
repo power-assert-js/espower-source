@@ -217,7 +217,7 @@ function instrumentWithoutSourceMapOutput (originalCode, options) {
 
 function mergeEspowerOptions (options, filepath) {
     return extend(espower.defaultOptions(), {
-        ecmaVersion: 2017,
+        ecmaVersion: 2018,
         sourceType: 'module',
         path: filepath
     }, options);
