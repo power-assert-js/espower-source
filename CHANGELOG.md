@@ -1,3 +1,11 @@
+## [2.3.0](https://github.com/power-assert-js/espower-source/releases/tag/v2.3.0) (2018-06-12)
+
+
+#### Features
+
+* [Support ES2018 syntax](https://github.com/power-assert-js/espower-source/pull/20)
+
+
 ## [2.2.0](https://github.com/power-assert-js/espower-source/releases/tag/v2.2.0) (2017-05-05)
 
 
