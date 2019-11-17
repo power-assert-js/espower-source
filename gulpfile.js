@@ -38,4 +38,4 @@ gulp.task('unit', function () {
     return runMochaSimply();
 });
 
-gulp.task('test', ['unit']);
+gulp.task('test', gulp.task('unit'));
